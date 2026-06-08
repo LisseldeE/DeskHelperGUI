@@ -129,7 +129,7 @@ QComboBox {
     color: #495057;
     border: 1px solid #ced4da;
     border-radius: 6px;
-    padding: 8px;
+    padding: 8px 30px 8px 8px;
     font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
 }
 QComboBox:hover {
@@ -141,11 +141,11 @@ QComboBox::drop-down {
     width: 30px;
 }
 QComboBox::down-arrow {
-    image: none;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #495057;
-    margin-right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: #495057;
+    margin-right: 8px;
 }
 QComboBox QAbstractItemView {
     background-color: white;

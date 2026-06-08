@@ -21,7 +21,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QFont
 
-from ui_components import STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE, AboutDialog, AnimatedButton
+from ui_components import (
+    STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE,
+    AboutDialog, AnimatedButton, NotificationBanner
+)
 from features import QuickCompressWidget
 from config_manager import ConfigManager
 from i18n import set_language, t, get_i18n
@@ -45,11 +48,11 @@ def get_resource_path(relative_path):
 
 def setup_dpi_scaling():
     """设置DPI缩放适配（解决高DPI显示问题）"""
-    # Windows高DPI适配
+    # Windows高DPI适配 - 启用Per-Monitor DPI感知
     if sys.platform == 'win32':
         try:
-            # 设置感知级别为Per Monitor V2（Windows 10 1703+）
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+            # 设置为 Per Monitor Aware V1 (1)，让程序自己处理DPI缩放
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except (AttributeError, OSError):
             # 如果失败，尝试使用旧版本API
             try:
@@ -57,13 +60,14 @@ def setup_dpi_scaling():
             except (AttributeError, OSError):
                 pass
 
-    # Qt高DPI设置
+    # Qt高DPI设置 - 启用自动缩放
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    # 启用字体抗锯齿（解决文字锯齿问题）
-    QApplication.setAttribute(Qt.AA_UseOpenGLES, True)  # 使用OpenGL ES渲染
-    QApplication.setAttribute(Qt.AA_DisableWindowContextHelpButton, True)  # 禁用帮助按钮
+    # 适配125%、150%等非整数倍缩放
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
 
 
 class MainWindow(QMainWindow):
@@ -93,9 +97,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(700, 500)
 
-        # 从配置加载窗口大小
-        width, height = self.config.get_window_size()
-        self.resize(width, height)
+        # 使用默认窗口大小
+        self.resize(900, 600)
 
         # 设置窗口图标
         icon_path = get_resource_path('icon.ico')
@@ -129,6 +132,9 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(content_layout)
         central_widget.setLayout(main_layout)
+
+        # 通知横幅（浮动在顶部，不挤压内容）
+        self.notification_banner = NotificationBanner(central_widget)
 
     def _create_top_bar(self, parent_layout):
         """创建顶栏"""
@@ -250,6 +256,7 @@ class MainWindow(QMainWindow):
         # 创建快捷压缩界面
         quick_compress_widget = QuickCompressWidget(self.lang, self.config)
         quick_compress_widget.compress_finished.connect(self._on_compress_finished)
+        quick_compress_widget.extract_finished.connect(self._on_extract_finished)
         self.feature_widgets['quick_compress'] = quick_compress_widget
         self.feature_stack.addWidget(quick_compress_widget)
 
@@ -320,15 +327,39 @@ class MainWindow(QMainWindow):
         dialog.exec_()
 
     def _on_compress_finished(self, success, message):
-        """压缩完成回调"""
-        # 这个回调在快捷压缩模块中已经处理了消息提示
-        # 这里可以添加额外的处理逻辑
-        pass
+        """压缩完成回调 - 显示顶部通知横幅"""
+        if success:
+            self.notification_banner.show_message(
+                t('msg_compress_done', os.path.basename(message)),
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                t('msg_compress_failed', message),
+                type='error', duration=5000
+            )
+
+    def _on_extract_finished(self, success, message):
+        """解压完成回调 - 显示顶部通知横幅"""
+        if success:
+            self.notification_banner.show_message(
+                t('extract_done', message),
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                t('extract_failed', message),
+                type='error', duration=5000
+            )
+
+    def resizeEvent(self, event):
+        """主窗口大小变化时重新定位通知横幅"""
+        super().resizeEvent(event)
+        if hasattr(self, 'notification_banner') and self.notification_banner.isVisible():
+            self.notification_banner._reposition()
 
     def closeEvent(self, event):
-        """窗口关闭事件 - 保存配置"""
-        # 保存窗口大小
-        self.config.set_window_size(self.width(), self.height())
+        """窗口关闭事件"""
         event.accept()
 
 

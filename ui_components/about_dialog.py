@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 DeskHelperGUI 关于对话框
 包含项目信息和检查更新功能
@@ -8,7 +8,6 @@ import urllib.request
 import json
 import re
 import os
-import sys
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
@@ -18,6 +17,7 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 
 # 添加项目根目录到路径
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t
 from ui_components.animated_button import AnimatedButton

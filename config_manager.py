@@ -21,10 +21,6 @@ class ConfigManager:
             'level': 2,             # 压缩级别索引 (0-4)
             'save_path': '',        # 保存路径
             'encrypt': False,       # 是否加密
-        },
-        'window': {
-            'width': 1000,          # 窗口宽度
-            'height': 700,          # 窗口高度
         }
     }
 
@@ -135,16 +131,6 @@ class ConfigManager:
     def set_save_path(self, path):
         """设置保存路径"""
         self.set('compress.save_path', path)
-        self.save_config()
-
-    def get_window_size(self):
-        """获取窗口大小"""
-        return self.get('window.width', 1000), self.get('window.height', 700)
-
-    def set_window_size(self, width, height):
-        """设置窗口大小"""
-        self.set('window.width', width)
-        self.set('window.height', height)
         self.save_config()
 
 

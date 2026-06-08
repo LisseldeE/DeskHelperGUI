@@ -18,7 +18,7 @@ LANGUAGES = {
 
         # 关于对话框
         'about_version': '版本：R1',
-        'about_desc': '基于 Python PyQt5 的桌面助手GUI，提供各种便捷功能',
+        'about_desc': '桌面办公小助手，提供多种快捷实用功能，让日常办公更高效',
         'about_author': '作者：Lisselde_E',
         'about_check_update': '检查更新',
         'about_close': '关闭',
@@ -35,7 +35,7 @@ LANGUAGES = {
         'about_info': '提示',
 
         # 快捷压缩
-        'compress_title': '压缩列表',
+        'compress_title': '文件列表',
         'compress_tip': '拖拽文件/文件夹到此处，或点击空白区域添加',
         'compress_add_file': '添加文件',
         'compress_add_folder': '添加文件夹',
@@ -65,6 +65,17 @@ LANGUAGES = {
         'compress_all_files': '所有文件 (*.*)',
         'compress_select_save': '选择保存路径',
 
+        # 解压功能
+        'extract_start': '开始解压',
+        'extract_password_title': '当前压缩包存在加密',
+        'extract_password_placeholder': '输入解压密码',
+        'extract_confirm': '确认',
+        'extract_done': '解压完成！\n文件已保存至：{}',
+        'extract_failed': '解压失败：{}',
+        'extract_need_password': '压缩包需要密码',
+        'extract_wrong_password': '密码错误',
+        'extract_no_compress_files': '列表中需要只包含压缩文件（ZIP、7z、TAR）才能解压',
+
         # 提示消息
         'msg_warning': '提示',
         'msg_error': '错误',
@@ -89,7 +100,7 @@ LANGUAGES = {
 
         # 关于对话框
         'about_version': 'Version: R1',
-        'about_desc': 'A desktop helper GUI based on Python PyQt5',
+        'about_desc': 'A compact desktop toolset offering quick utilities for more efficient daily office work',
         'about_author': 'Author: Lisselde_E',
         'about_check_update': 'Check Update',
         'about_close': 'Close',
@@ -135,6 +146,17 @@ LANGUAGES = {
         'compress_select_folder': 'Select Folder',
         'compress_all_files': 'All Files (*.*)',
         'compress_select_save': 'Select Save Path',
+
+        # 解压功能
+        'extract_start': 'Extract',
+        'extract_password_title': 'Archive is encrypted',
+        'extract_password_placeholder': 'Enter extraction password',
+        'extract_confirm': 'Confirm',
+        'extract_done': 'Extraction completed!\nFiles saved to: {}',
+        'extract_failed': 'Extraction failed: {}',
+        'extract_need_password': 'Archive requires password',
+        'extract_wrong_password': 'Wrong password',
+        'extract_no_compress_files': 'List must contain only archive files (ZIP, 7z, TAR) to extract',
 
         # 提示消息
         'msg_warning': 'Warning',

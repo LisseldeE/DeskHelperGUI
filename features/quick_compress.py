@@ -15,9 +15,9 @@ from PyQt5.QtWidgets import (
     QListWidget, QListWidgetItem, QComboBox, QCheckBox,
     QLineEdit, QFileDialog, QProgressBar, QMessageBox, QGroupBox,
     QAbstractItemView, QFrame, QSizePolicy, QScrollArea, QMenu,
-    QGraphicsOpacityEffect
+    QGraphicsOpacityEffect, QDialog
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject, Q_ARG, QSize, QPropertyAnimation, QByteArray, QTimer
+from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject, Q_ARG, QSize, QPropertyAnimation, QByteArray
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont
 
 import sys
@@ -113,6 +113,10 @@ class QuickCompressWidget(QWidget):
 
     # 压缩完成信号
     compress_finished = pyqtSignal(bool, str)  # (成功, 消息)
+    # 解压完成信号（与压缩分开，便于显示不同提示）
+    extract_finished = pyqtSignal(bool, str)   # (成功, 消息)
+    # 请求密码信号（用于线程安全的密码对话框）
+    password_requested = pyqtSignal()  # 请求显示密码对话框
 
     def __init__(self, lang='zh', config=None, parent=None):
         super().__init__(parent)
@@ -122,13 +126,22 @@ class QuickCompressWidget(QWidget):
         self.is_compressing = False
         self.list_item_widgets = {}  # 存储列表项widget的字典 {path: widget}
 
+        # 密码请求相关（线程安全）
+        self._password_lock = threading.Lock()
+        self._password_result = None
+        self._password_archive_name = None  # 当前正在解压的压缩包名称
+        self._password_event = threading.Event()
+
         # 设置语言
         set_language(lang)
 
         self._init_ui()
         self._load_config()
-        # 连接压缩完成信号到UI重置方法
+        # 连接压缩/解压完成信号到UI重置方法
         self.compress_finished.connect(self.on_compress_finished)
+        self.extract_finished.connect(self.on_compress_finished)
+        # 连接密码请求信号到密码对话框处理方法
+        self.password_requested.connect(self._show_password_dialog)
         self.setAcceptDrops(True)
 
     def _init_ui(self):
@@ -220,6 +233,7 @@ class QuickCompressWidget(QWidget):
         self.settings_group = QGroupBox(t('compress_settings'))
         settings_layout = QVBoxLayout()
         settings_layout.setSpacing(12)
+        settings_layout.setContentsMargins(12, 16, 12, 12)  # 增加上下边距
 
         # 第一行：压缩包名称
         row0_layout = QHBoxLayout()
@@ -262,14 +276,14 @@ class QuickCompressWidget(QWidget):
             }
             QComboBox::drop-down {
                 border: none;
-                width: 24px;
+                width: 28px;
             }
             QComboBox::down-arrow {
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 5px solid #495057;
-                margin-right: 4px;
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background-color: #495057;
+                margin-right: 8px;
             }
             QComboBox QAbstractItemView {
                 background-color: white;
@@ -320,6 +334,7 @@ class QuickCompressWidget(QWidget):
 
         # 第三行：加密设置
         row2_layout = QHBoxLayout()
+        row2_layout.setAlignment(Qt.AlignVCenter)  # 设置垂直居中对齐
 
         # 加密模式切换按钮
         self.encrypt_mode = False  # 默认无密码
@@ -340,50 +355,70 @@ class QuickCompressWidget(QWidget):
             }
         """)
         self.encrypt_btn.clicked.connect(self._toggle_encrypt_mode)
-        row2_layout.addWidget(self.encrypt_btn)
+        row2_layout.addWidget(self.encrypt_btn, 0, Qt.AlignVCenter)
 
-        # 密码输入区域（初始隐藏）
+        # 密码输入区域
         self.password_widget = QWidget()
         self.password_widget.setStyleSheet("background-color: transparent;")
         password_layout = QHBoxLayout()
-        password_layout.setContentsMargins(0, 0, 0, 0)
+        password_layout.setContentsMargins(0, 0, 0, 0)  # 无边距
         password_layout.setSpacing(10)
+        password_layout.setAlignment(Qt.AlignVCenter)
 
         self.password_label = QLabel(t('compress_password'))
-        password_layout.addWidget(self.password_label)
+        password_layout.addWidget(self.password_label, 0, Qt.AlignVCenter)
 
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setPlaceholderText(t('compress_password_placeholder'))
         self.password_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        password_layout.addWidget(self.password_input)
+        self.password_input.setFixedHeight(36)
+        self.password_input.setStyleSheet("""
+            QLineEdit {
+                padding: 6px 12px;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                background-color: white;
+                font-size: 13px;
+                min-height: 20px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #4dabf7;
+            }
+        """)
+        password_layout.addWidget(self.password_input, 0, Qt.AlignVCenter)
 
         # 显示密码复选框
         self.show_pwd_check = QCheckBox(t('compress_show_password'))
         self.show_pwd_check.stateChanged.connect(self._toggle_password_visibility)
-        password_layout.addWidget(self.show_pwd_check)
+        password_layout.addWidget(self.show_pwd_check, 0, Qt.AlignVCenter)
 
         self.password_widget.setLayout(password_layout)
-        self.password_widget.setVisible(False)  # 初始隐藏
-        row2_layout.addWidget(self.password_widget)
+        self.password_widget.setFixedHeight(36)  # 与输入框高度一致
+        # 初始隐藏密码控件
+        self.password_widget.setVisible(False)
+        row2_layout.addWidget(self.password_widget, 0, Qt.AlignVCenter)
 
         row2_layout.addStretch()
         settings_layout.addLayout(row2_layout)
 
         # 第四行：保存路径
         row3_layout = QHBoxLayout()
+        row3_layout.setAlignment(Qt.AlignVCenter)  # 设置垂直居中对齐
 
         self.save_label = QLabel(t('compress_save_path'))
-        row3_layout.addWidget(self.save_label)
+        row3_layout.addWidget(self.save_label, 0, Qt.AlignVCenter)
 
         self.save_path_input = QLineEdit()
         self.save_path_input.setPlaceholderText(t('compress_save_placeholder'))
         self.save_path_input.setReadOnly(True)
-        row3_layout.addWidget(self.save_path_input)
+        self.save_path_input.setFixedHeight(36)  # 固定高度
+        row3_layout.addWidget(self.save_path_input, 0, Qt.AlignVCenter)
 
         self.browse_btn = AnimatedButton(t('compress_browse'))
+        self.browse_btn.setFixedHeight(36)  # 与输入框高度一致，防止中文显示不全
         self.browse_btn.clicked.connect(self._browse_save_path)
-        row3_layout.addWidget(self.browse_btn)
+        row3_layout.addWidget(self.browse_btn, 0, Qt.AlignVCenter)
 
         settings_layout.addLayout(row3_layout)
 
@@ -422,27 +457,11 @@ class QuickCompressWidget(QWidget):
         progress_wrapper.addWidget(self.progress_bar)
         layout.addLayout(progress_wrapper)
 
-        # 状态提示标签（替代弹窗）
-        self.status_label = QLabel()
-        self.status_label.setVisible(False)
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setWordWrap(True)
-        self.status_label.setFixedHeight(36)
-        self.status_label.setStyleSheet("""
-            QLabel {
-                background-color: transparent;
-                font-size: 12px;
-                font-weight: 600;
-                padding: 4px 12px;
-                border-radius: 6px;
-            }
-        """)
-        layout.addWidget(self.status_label)
-
-        # 压缩按钮
+        # 操作按钮区域（压缩 + 解压）
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
 
+        # 压缩按钮
         self.compress_btn = AnimatedButton(t('compress_start'))
         self.compress_btn.setMinimumWidth(150)
         self.compress_btn.setMinimumHeight(40)
@@ -470,6 +489,36 @@ class QuickCompressWidget(QWidget):
         """)
         self.compress_btn.clicked.connect(self._start_compress)
         btn_layout.addWidget(self.compress_btn)
+
+        # 解压按钮
+        self.extract_btn = AnimatedButton(t('extract_start'))
+        self.extract_btn.setMinimumWidth(150)
+        self.extract_btn.setMinimumHeight(40)
+        self.extract_btn.setEnabled(False)  # 默认不可点击
+        self.extract_btn.setVisible(False)  # 默认隐藏
+        self.extract_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #adb5bd;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #868e96;
+            }
+            QPushButton:pressed {
+                background-color: #495057;
+            }
+            QPushButton:disabled {
+                background-color: #adb5bd;
+                color: #868e96;
+            }
+        """)
+        self.extract_btn.clicked.connect(self._start_extract)
+        btn_layout.addWidget(self.extract_btn)
 
         btn_layout.addStretch()
         layout.addLayout(btn_layout)
@@ -518,7 +567,7 @@ class QuickCompressWidget(QWidget):
                             background-color: #228be6;
                         }
                     """)
-                    self.password_widget.setVisible(True)
+                    self._set_password_controls_visible(True)
 
     def _save_config(self):
         """保存设置到配置"""
@@ -535,13 +584,16 @@ class QuickCompressWidget(QWidget):
             self.config.save_config()
 
     def _update_compress_btn_state(self):
-        """更新压缩按钮状态"""
+        """更新压缩按钮和解压按钮状态"""
         # 检查是否有文件和保存路径
         has_files = len(self.file_list) > 0
         has_save_path = bool(self.save_path_input.text())
 
+        # 检查是否只有压缩文件
+        only_compress_files = self._check_only_compress_files()
+
+        # 更新压缩按钮状态
         if has_files and has_save_path:
-            # 有文件且有保存路径，按钮变绿色可点击
             self.compress_btn.setEnabled(True)
             self.compress_btn.setStyleSheet("""
                 QPushButton {
@@ -561,7 +613,6 @@ class QuickCompressWidget(QWidget):
                 }
             """)
         else:
-            # 没有文件或没有保存路径，按钮灰色不可点击
             self.compress_btn.setEnabled(False)
             self.compress_btn.setStyleSheet("""
                 QPushButton {
@@ -584,6 +635,53 @@ class QuickCompressWidget(QWidget):
                     color: #868e96;
                 }
             """)
+
+        # 更新解压按钮状态（带渐入渐出动画）
+        if only_compress_files and has_save_path:
+            # 设置解压按钮样式和启用状态
+            self.extract_btn.setEnabled(True)
+            self.extract_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #51cf66;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #40c057;
+                }
+                QPushButton:pressed {
+                    background-color: #37b24d;
+                }
+            """)
+            # 如果按钮不可见，淡入显示
+            if not self.extract_btn.isVisible():
+                self._fade_widget(self.extract_btn, True, duration=200)
+        else:
+            # 淡出隐藏解压按钮
+            if self.extract_btn.isVisible():
+                self._fade_widget(self.extract_btn, False, duration=200)
+            self.extract_btn.setEnabled(False)
+
+    def _check_only_compress_files(self):
+        """检查文件列表是否只包含压缩文件（ZIP、7z、TAR）"""
+        if len(self.file_list) == 0:
+            return False
+
+        compress_extensions = ['.zip', '.7z', '.tar', '.tar.gz', '.tgz', '.tar.bz2']
+        for file_path in self.file_list:
+            ext = os.path.splitext(file_path)[1].lower()
+            # 处理 .tar.gz 等双扩展名
+            if ext == '.gz' and file_path.lower().endswith('.tar.gz'):
+                ext = '.tar.gz'
+            elif ext == '.bz2' and file_path.lower().endswith('.tar.bz2'):
+                ext = '.tar.bz2'
+            if ext not in compress_extensions:
+                return False
+        return True
 
     def update_language(self, lang):
         """更新语言"""
@@ -616,6 +714,7 @@ class QuickCompressWidget(QWidget):
         self.save_path_input.setPlaceholderText(t('compress_save_placeholder'))
         self.browse_btn.setText(t('compress_browse'))
         self.compress_btn.setText(t('compress_start'))
+        self.extract_btn.setText(t('extract_start'))
 
         # 更新7z提示
         if not HAS_PY7ZR:
@@ -625,38 +724,58 @@ class QuickCompressWidget(QWidget):
 
     def _fade_widget(self, widget, visible, duration=150):
         """
-        控件淡入淡出动画
+        控件淡入淡出动画（正确管理动画生命周期）
         Args:
             widget: 要动画的控件
             visible: True 显示（淡入），False 隐藏（淡出）
             duration: 动画持续时间（毫秒）
         """
-        # 创建透明度效果
-        effect = QGraphicsOpacityEffect(widget)
-        widget.setGraphicsEffect(effect)
-        
+        if not hasattr(self, '_fade_animations'):
+            self._fade_animations = {}  # 改用字典存储 {widget: animation}
+
+        # 停止并清理该widget的旧动画
+        old_animation = self._fade_animations.get(widget)
+        if old_animation:
+            old_animation.stop()
+            old_animation.deleteLater()
+            self._fade_animations.pop(widget, None)
+
+        # 获取或创建透明度效果
+        effect = widget.graphicsEffect()
+        if not effect or not isinstance(effect, QGraphicsOpacityEffect):
+            effect = QGraphicsOpacityEffect(widget)
+            widget.setGraphicsEffect(effect)
+
         # 创建动画
         animation = QPropertyAnimation(effect, QByteArray(b"opacity"))
         animation.setDuration(duration)
-        
+        self._fade_animations[widget] = animation
+
         if visible:
-            # 淡入：从0到1
             widget.setVisible(True)
             animation.setStartValue(0.0)
             animation.setEndValue(1.0)
         else:
-            # 淡出：从1到0
             animation.setStartValue(1.0)
             animation.setEndValue(0.0)
-            # 动画完成后隐藏控件
-            animation.finished.connect(lambda: widget.setVisible(False))
-        
+            # 使用 functools.partial 避免 lambda 内存问题
+            from functools import partial
+            animation.finished.connect(partial(self._on_fade_finished, widget))
+
         animation.start()
-        
-        # 保存动画对象，防止被垃圾回收
-        if not hasattr(self, '_fade_animations'):
-            self._fade_animations = []
-        self._fade_animations.append(animation)
+
+    def _on_fade_finished(self, widget):
+        """淡出动画完成回调"""
+        widget.setVisible(False)
+        # 清理动画引用
+        if hasattr(self, '_fade_animations'):
+            animation = self._fade_animations.pop(widget, None)
+            if animation:
+                animation.deleteLater()
+
+    def _set_password_controls_visible(self, visible):
+        """设置密码输入区域的可见性（带渐入渐出动画）"""
+        self._fade_widget(self.password_widget, visible, duration=200)
 
     def _toggle_encrypt_mode(self):
         """切换加密模式"""
@@ -679,8 +798,8 @@ class QuickCompressWidget(QWidget):
                     background-color: #228be6;
                 }
             """)
-            # 淡入显示密码输入区域
-            self._fade_widget(self.password_widget, True)
+            # 显示密码输入区域内部控件
+            self._set_password_controls_visible(True)
         else:
             # 切换到无密码模式
             self.encrypt_btn.setText(t('compress_no_password'))
@@ -698,8 +817,8 @@ class QuickCompressWidget(QWidget):
                     background-color: #dee2e6;
                 }
             """)
-            # 淡出隐藏密码输入区域
-            self._fade_widget(self.password_widget, False)
+            # 隐藏密码输入区域内部控件
+            self._set_password_controls_visible(False)
             # 清空密码
             self.password_input.clear()
             self.show_pwd_check.setChecked(False)
@@ -834,6 +953,10 @@ class QuickCompressWidget(QWidget):
             event.accept()
         else:
             event.ignore()
+
+    def dragMoveEvent(self, event):
+        """拖拽移动事件"""
+        event.accept()
 
     def dropEvent(self, event: QDropEvent):
         """拖拽放下事件"""
@@ -1006,12 +1129,19 @@ class QuickCompressWidget(QWidget):
         level_map = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9}
         compress_level = level_map.get(level_index, 5)
 
+        total_files = sum(len(self._get_all_files(path)) for path in file_list)
+        processed = 0
+
         with py7zr.SevenZipFile(output_path, 'w', password=password) as archive:
             for source_path in file_list:
                 if os.path.isfile(source_path):
                     archive.write(source_path, os.path.basename(source_path))
+                    processed += 1
                 else:
                     archive.writeall(source_path, os.path.basename(source_path))
+                    processed += len(self._get_all_files(source_path))
+                if total_files > 0:
+                    self._update_progress(int(processed / total_files * 100))
 
         self._update_progress(100)
 
@@ -1060,38 +1190,445 @@ class QuickCompressWidget(QWidget):
         """更新进度条"""
         QMetaObject.invokeMethod(self.progress_bar, "setValue", Qt.QueuedConnection, Q_ARG(int, value))
 
-    def _show_status_message(self, text, color, bg_color, auto_hide_ms=3500):
-        """显示非交互式状态消息，自动淡出"""
-        self.status_label.setText(text)
-        self.status_label.setStyleSheet(f"""
-            QLabel {{
-                background-color: {bg_color};
-                color: {color};
-                font-size: 12px;
-                font-weight: 600;
-                padding: 4px 12px;
-                border-radius: 6px;
-            }}
-        """)
-        self._fade_widget(self.status_label, True, duration=200)
-        # 定时自动淡出
-        QTimer.singleShot(auto_hide_ms, lambda: self._fade_widget(self.status_label, False, duration=300))
-
     def on_compress_finished(self, success, message):
-        """压缩完成回调"""
+        """压缩/解压完成回调"""
         self.is_compressing = False
         self.compress_btn.setEnabled(True)
         self.clear_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
+        
+        # 更新解压按钮状态
+        self._update_compress_btn_state()
 
         if success:
-            self._show_status_message(
-                t('msg_compress_done', os.path.basename(message)),
-                '#2b8a3e', '#d3f9d8', 4000
-            )
             self._clear_list()
+
+    def _start_extract(self):
+        """开始解压"""
+        # 验证输入
+        if not self.file_list:
+            QMessageBox.warning(self, t('msg_warning'), t('msg_add_files'))
+            return
+
+        save_path = self.save_path_input.text()
+        if not save_path:
+            QMessageBox.warning(self, t('msg_warning'), t('msg_select_path'))
+            return
+
+        # 禁用按钮，显示进度条
+        self.is_compressing = True
+        self.compress_btn.setEnabled(False)
+        self.extract_btn.setEnabled(False)
+        self.clear_btn.setEnabled(False)
+        self.progress_bar.setValue(0)
+        self._fade_widget(self.progress_bar, True, duration=200)
+
+        # 复制文件列表
+        file_list = self.file_list.copy()
+
+        # 在新线程中执行解压
+        thread = threading.Thread(
+            target=self._extract_thread,
+            args=(file_list, save_path)
+        )
+        thread.daemon = True
+        thread.start()
+
+    def _extract_thread(self, file_list, save_path):
+        """解压线程"""
+        try:
+            for archive_path in file_list:
+                # 规范化路径
+                archive_path = os.path.normpath(archive_path)
+                save_path = os.path.normpath(save_path)
+                
+                # 获取压缩包名称（用于密码对话框显示）
+                archive_name = os.path.basename(archive_path)
+                
+                ext = os.path.splitext(archive_path)[1].lower()
+                # 处理双扩展名
+                if archive_path.lower().endswith('.tar.gz'):
+                    ext = '.tar.gz'
+                elif archive_path.lower().endswith('.tar.bz2'):
+                    ext = '.tar.bz2'
+
+                # 直接解压到保存路径，不创建额外文件夹
+                # 这样压缩包内的结构会保持不变
+                output_dir = save_path
+
+                # 根据格式解压（密码需求在解压方法内部处理）
+                if ext == '.zip':
+                    self._extract_zip(archive_path, output_dir)
+                elif ext == '.7z':
+                    self._extract_7z(archive_path, output_dir)
+                elif ext in ['.tar', '.tar.gz', '.tgz', '.tar.bz2']:
+                    self._extract_tar(archive_path, output_dir)
+
+                self._update_progress(100)
+
+            # 解压完成
+            self.extract_finished.emit(True, save_path)
+
+        except Exception as e:
+            self.extract_finished.emit(False, str(e))
+
+    def _request_password(self, archive_name=None):
+        """请求密码（线程安全，通过信号在主线程显示对话框）
+        
+        Args:
+            archive_name: 当前正在解压的压缩包名称，用于在对话框中显示
+        """
+        with self._password_lock:
+            # 重置密码结果和事件
+            self._password_result = None
+            self._password_archive_name = archive_name
+            self._password_event.clear()
+
+            # 发送信号请求显示密码对话框（在主线程中执行）
+            self.password_requested.emit()
+
+            # 等待密码输入完成（最多等待60秒）
+            if self._password_event.wait(timeout=60):
+                if self._password_result is not None:
+                    return self._password_result
+                else:
+                    raise Exception(t('extract_need_password'))
+            else:
+                raise Exception(t('extract_need_password'))
+
+    def _show_password_dialog(self):
+        """在主线程中显示密码对话框"""
+        from PyQt5.QtWidgets import QDialog
+        
+        dialog = PasswordDialog(self, archive_name=self._password_archive_name)
+        result = dialog.exec_()
+        
+        if result == QDialog.Accepted:
+            self._password_result = dialog.get_password()
         else:
-            self._show_status_message(
-                t('msg_compress_failed', message),
-                '#c92a2a', '#ffe3e3', 5000
-            )
+            self._password_result = None
+        
+        # 设置事件，通知等待线程
+        self._password_event.set()
+
+    def _extract_zip(self, archive_path, output_dir):
+        """解压ZIP文件（密码对话框只在需要时弹出一次）"""
+        os.makedirs(output_dir, exist_ok=True)
+
+        password = None
+        first_try = True
+
+        while True:
+            try:
+                if password:
+                    if not HAS_PYZIPPER:
+                        raise Exception("需要安装 pyzipper 库才能解压加密ZIP文件\n请运行: pip install pyzipper")
+                    with pyzipper.AESZipFile(archive_path, 'r') as zf:
+                        zf.setpassword(password.encode('utf-8'))
+                        self._extract_and_fix_filenames(zf, output_dir)
+                else:
+                    with zipfile.ZipFile(archive_path, 'r') as zf:
+                        self._extract_and_fix_filenames(zf, output_dir)
+                return  # 解压成功，退出循环
+            except RuntimeError as e:
+                err_str = str(e).lower()
+                if 'password' in err_str or 'decrypt' in err_str or 'bad password' in err_str:
+                    if first_try:
+                        archive_name = os.path.basename(archive_path)
+                        password = self._request_password(archive_name)
+                        first_try = False
+                        continue  # 用获取的密码重试一次
+                    raise Exception(t('extract_wrong_password'))
+                raise
+
+    def _extract_and_fix_filenames(self, zf, output_dir):
+        """解压ZIP并修复文件名编码"""
+        # 先全部解压
+        zf.extractall(output_dir)
+        
+        # 遍历解压后的文件，修复乱码文件名
+        self._fix_extracted_filenames(output_dir)
+
+    def _fix_extracted_filenames(self, directory):
+        """递归修复目录中的乱码文件名"""
+        import shutil
+        
+        # 收集需要重命名的项
+        rename_list = []
+        
+        for root, dirs, files in os.walk(directory):
+            for name in dirs + files:
+                original_path = os.path.join(root, name)
+                
+                # 尝试修复文件名编码
+                fixed_name = self._try_fix_encoding(name)
+                
+                if fixed_name != name:
+                    fixed_path = os.path.join(root, fixed_name)
+                    rename_list.append((original_path, fixed_path))
+        
+        # 执行重命名（从最深路径开始，避免父目录先被重命名）
+        rename_list.sort(key=lambda x: x[0], reverse=True)
+        
+        for original_path, fixed_path in rename_list:
+            if os.path.exists(original_path):
+                # 确保目标目录存在
+                os.makedirs(os.path.dirname(fixed_path), exist_ok=True)
+                # 重命名
+                if os.path.exists(fixed_path):
+                    # 如果目标已存在，先删除
+                    if os.path.isfile(fixed_path):
+                        os.remove(fixed_path)
+                    else:
+                        shutil.rmtree(fixed_path)
+                os.rename(original_path, fixed_path)
+
+    @staticmethod
+    def _try_fix_encoding(name):
+        """尝试多种编码组合修复乱码文件名"""
+        # 如果文件名已经是有效的UTF-8中文，不必修复
+        import unicodedata
+        has_cjk = any(
+            '\u4e00' <= c <= '\u9fff' or '\u3400' <= c <= '\u4dbf'
+            for c in name
+        )
+        if has_cjk:
+            return name
+        
+        # 如果全是ASCII，不必修复
+        if all(ord(c) < 128 for c in name):
+            return name
+        
+        # 按优先级尝试编码组合
+        # 常见乱码来源：ZIP中文件名以CP437存储，但实际上是GBK/UTF-8/Big5编码
+        encoding_pairs = [
+            ('cp437', 'gbk'),      # GBK中文（最常见）
+            ('cp437', 'utf-8'),    # UTF-8中文
+            ('cp437', 'big5'),     # 繁体中文
+            ('cp437', 'shift_jis'),# 日文
+            ('cp437', 'cp949'),    # 韩文
+            ('utf-8', 'gbk'),      # UTF-8读了当作GBK
+            ('utf-8', 'big5'),     # UTF-8读了当作Big5
+            ('latin-1', 'gbk'),    # Latin-1读了当作GBK
+            ('latin-1', 'utf-8'),  # Latin-1读了当作UTF-8
+        ]
+        
+        for src_enc, dst_enc in encoding_pairs:
+            try:
+                fixed = name.encode(src_enc).decode(dst_enc)
+                # 验证修复结果是否合理（包含有效中文或字母数字）
+                if any('\u4e00' <= c <= '\u9fff' for c in fixed) or \
+                   any(c.isalnum() for c in fixed):
+                    return fixed
+            except (UnicodeDecodeError, UnicodeEncodeError, LookupError):
+                continue
+        
+        # 尝试单个编码方案：zigzag - 可能是正确的编码但没有中间转换
+        for enc in ['gbk', 'big5', 'shift_jis', 'utf-8']:
+            try:
+                # 尝试用该编码重新解码原始字节
+                raw = name.encode('latin-1', errors='replace')
+                fixed = raw.decode(enc, errors='replace')
+                if any('\u4e00' <= c <= '\u9fff' for c in fixed) or \
+                   any(c.isalnum() for c in fixed):
+                    return fixed
+            except Exception:
+                continue
+        
+        return name  # 所有尝试都失败，保持原样
+
+    def _extract_7z(self, archive_path, output_dir):
+        """解压7z文件（密码对话框只在需要时弹出一次）"""
+        if not HAS_PY7ZR:
+            raise Exception("需要安装 py7zr 库才能解压7z文件\n请运行: pip install py7zr")
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        password = None
+        first_try = True
+        
+        while True:
+            try:
+                with py7zr.SevenZipFile(archive_path, 'r', password=password) as archive:
+                    archive.extractall(output_dir)
+                return  # 解压成功
+            except py7zr.exceptions.PasswordRequired:
+                if first_try:
+                    archive_name = os.path.basename(archive_path)
+                    password = self._request_password(archive_name)
+                    first_try = False
+                    continue  # 用获取的密码重试一次
+                raise Exception(t('extract_wrong_password'))
+            except Exception as e:
+                if 'password' in str(e).lower() or 'decrypt' in str(e).lower():
+                    raise Exception(t('extract_wrong_password'))
+                raise
+
+    def _extract_tar(self, archive_path, output_dir):
+        """解压TAR文件"""
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 规范化路径
+        archive_path = os.path.normpath(archive_path)
+        output_dir = os.path.normpath(output_dir)
+        
+        # 确定压缩模式
+        if archive_path.lower().endswith('.tar.gz') or archive_path.lower().endswith('.tgz'):
+            mode = 'r:gz'
+        elif archive_path.lower().endswith('.tar.bz2'):
+            mode = 'r:bz2'
+        else:
+            mode = 'r'
+        
+        with tarfile.open(archive_path, mode) as tf:
+            tf.extractall(output_dir)
+
+
+class PasswordDialog(QDialog):
+    """密码输入对话框"""
+
+    def __init__(self, parent=None, archive_name=None):
+        super().__init__(parent)
+        self.archive_name = archive_name
+        self.setWindowTitle(t('extract_password_title'))
+        # 根据是否有文件名调整对话框高度
+        if archive_name:
+            self.setFixedSize(350, 210)
+        else:
+            self.setFixedSize(300, 170)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+            }
+        """)
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # 标题
+        title_label = QLabel(t('extract_password_title'))
+        title_label.setStyleSheet("""
+            QLabel {
+                font-size: 14px;
+                font-weight: bold;
+                color: #495057;
+            }
+        """)
+        layout.addWidget(title_label)
+
+        # 文件名提示（如果有）
+        if self.archive_name:
+            archive_label = QLabel(f"文件：{self.archive_name}")
+            archive_label.setStyleSheet("""
+                QLabel {
+                    font-size: 12px;
+                    color: #868e96;
+                    padding: 4px 0;
+                }
+            """)
+            layout.addWidget(archive_label)
+
+        # 密码输入框
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setPlaceholderText(t('extract_password_placeholder'))
+        self.password_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 12px;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                background-color: white;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #4dabf7;
+            }
+        """)
+        self.password_input.textChanged.connect(self._on_password_changed)
+        layout.addWidget(self.password_input)
+
+        # 确认按钮（默认禁用，输入密码后才可点击）
+        self.confirm_btn = AnimatedButton(t('extract_confirm'))
+        self.confirm_btn.setFixedHeight(40)
+        self.confirm_btn.setEnabled(False)
+        self.confirm_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #adb5bd;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #868e96;
+            }
+            QPushButton:pressed {
+                background-color: #495057;
+            }
+            QPushButton:disabled {
+                background-color: #dee2e6;
+                color: #adb5bd;
+            }
+        """)
+        self.confirm_btn.clicked.connect(self.accept)
+        layout.addWidget(self.confirm_btn)
+
+        self.setLayout(layout)
+
+    def _on_password_changed(self, text):
+        """密码框内容变化时更新确认按钮状态"""
+        has_text = bool(text.strip())
+        self.confirm_btn.setEnabled(has_text)
+        if has_text:
+            self.confirm_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #51cf66;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #40c057;
+                }
+                QPushButton:pressed {
+                    background-color: #37b24d;
+                }
+                QPushButton:disabled {
+                    background-color: #dee2e6;
+                    color: #adb5bd;
+                }
+            """)
+        else:
+            self.confirm_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #adb5bd;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #868e96;
+                }
+                QPushButton:pressed {
+                    background-color: #495057;
+                }
+                QPushButton:disabled {
+                    background-color: #dee2e6;
+                    color: #adb5bd;
+                }
+            """)
+
+    def get_password(self):
+        """获取输入的密码"""
+        return self.password_input.text()
