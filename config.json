@@ -1,0 +1,14 @@
+{
+    "language": "zh",
+    "last_feature": "quick_compress",
+    "compress": {
+        "format": "ZIP",
+        "level": 2,
+        "save_path": "C:/SyncHub/DeskTop",
+        "encrypt": false
+    },
+    "window": {
+        "width": 998,
+        "height": 640
+    }
+}
