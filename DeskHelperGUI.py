@@ -25,7 +25,7 @@ from ui_components import (
     STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE,
     AboutDialog, AnimatedButton, NotificationBanner
 )
-from features import QuickCompressWidget
+from features import QuickCompressWidget, FileNameExtractorWidget
 from config_manager import ConfigManager
 from i18n import set_language, t, get_i18n
 
@@ -229,8 +229,8 @@ class MainWindow(QMainWindow):
         # 功能按钮列表
         features = [
             ('quick_compress', t('feature_quick_compress')),
+            ('file_extractor', t('feature_file_extractor')),
             # 后续功能可以在这里添加
-            # ('feature2', t('feature2')),
             # ('feature3', t('feature3')),
         ]
 
@@ -260,10 +260,16 @@ class MainWindow(QMainWindow):
         self.feature_widgets['quick_compress'] = quick_compress_widget
         self.feature_stack.addWidget(quick_compress_widget)
 
+        # 创建文件名提取界面
+        file_extractor_widget = FileNameExtractorWidget(self.lang, self.config)
+        file_extractor_widget.export_finished.connect(self._on_extractor_finished)
+        self.feature_widgets['file_extractor'] = file_extractor_widget
+        self.feature_stack.addWidget(file_extractor_widget)
+
         # 后续功能界面可以在这里添加
-        # feature2_widget = Feature2Widget(self.lang, self.config)
-        # self.feature_widgets['feature2'] = feature2_widget
-        # self.feature_stack.addWidget(feature2_widget)
+        # feature3_widget = Feature3Widget(self.lang, self.config)
+        # self.feature_widgets['feature3'] = feature3_widget
+        # self.feature_stack.addWidget(feature3_widget)
 
         parent_layout.addWidget(self.feature_stack)
 
@@ -281,8 +287,17 @@ class MainWindow(QMainWindow):
 
         # 切换界面
         if feature_id in self.feature_widgets:
-            self.feature_stack.setCurrentWidget(self.feature_widgets[feature_id])
+            widget = self.feature_widgets[feature_id]
+            self.feature_stack.setCurrentWidget(widget)
             self.current_feature = feature_id
+            
+            # 重新加载配置（确保全局路径同步）
+            # 使用 try 防止加载过程中的异常影响切换
+            try:
+                if hasattr(widget, '_load_config'):
+                    widget._load_config()
+            except Exception:
+                pass
 
             # 保存到配置
             self.config.set_last_feature(feature_id)
@@ -312,6 +327,7 @@ class MainWindow(QMainWindow):
         # 更新功能按钮文本
         features_text = {
             'quick_compress': t('feature_quick_compress'),
+            'file_extractor': t('feature_file_extractor'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -349,6 +365,19 @@ class MainWindow(QMainWindow):
         else:
             self.notification_banner.show_message(
                 t('extract_failed', message),
+                type='error', duration=5000
+            )
+
+    def _on_extractor_finished(self, success, message):
+        """文件名提取导出完成回调 - 显示顶部通知横幅"""
+        if success:
+            self.notification_banner.show_message(
+                t('extractor_export_done', message),
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                t('extractor_export_failed', message),
                 type='error', duration=5000
             )
 

@@ -16,10 +16,10 @@ class ConfigManager:
     DEFAULT_CONFIG = {
         'language': 'zh',           # 语言设置
         'last_feature': 'quick_compress',  # 上次使用的功能
+        'save_path': '',            # 全局保存路径
         'compress': {
             'format': 'ZIP',        # 压缩格式
             'level': 2,             # 压缩级别索引 (0-4)
-            'save_path': '',        # 保存路径
             'encrypt': False,       # 是否加密
         }
     }
@@ -125,12 +125,12 @@ class ConfigManager:
         self.save_config()
 
     def get_save_path(self):
-        """获取保存路径"""
-        return self.get('compress.save_path', '')
+        """获取全局保存路径"""
+        return self.get('save_path', '')
 
     def set_save_path(self, path):
-        """设置保存路径"""
-        self.set('compress.save_path', path)
+        """设置全局保存路径"""
+        self.set('save_path', path)
         self.save_config()
 
 

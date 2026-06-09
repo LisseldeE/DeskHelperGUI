@@ -1,10 +1,10 @@
 {
     "language": "zh",
     "last_feature": "quick_compress",
+    "save_path": "C:/SyncHub/DeskTop",
     "compress": {
         "format": "ZIP",
         "level": 2,
-        "save_path": "C:/SyncHub/DeskTop",
         "encrypt": false
     }
 }

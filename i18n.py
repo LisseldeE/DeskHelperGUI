@@ -15,6 +15,7 @@ LANGUAGES = {
 
         # 侧边栏功能
         'feature_quick_compress': '快捷压缩',
+        'feature_file_extractor': '文件名提取',
 
         # 关于对话框
         'about_version': '版本：R1',
@@ -86,6 +87,27 @@ LANGUAGES = {
         'msg_need_py7zr': '需要安装 py7zr 库才能使用 7z 格式\n请运行: pip install py7zr',
         'msg_compress_done': '压缩完成！\n文件已保存至：{}',
         'msg_compress_failed': '压缩失败：{}',
+
+        # 文件名提取
+        'extractor_folder': '文件夹选择',
+        'extractor_folder_placeholder': '拖拽文件夹到此处，或点击右侧按钮选择',
+        'extractor_tip': '拖拽文件夹到上方输入框，或点击"浏览..."按钮选择',
+        'extractor_browse': '浏览...',
+        'extractor_include_ext': '包含扩展名',
+        'extractor_preview': '文件预览',
+        'extractor_status_ready': '准备就绪',
+        'extractor_status_found': '找到 {} 个文件',
+        'extractor_no_folder': '请先选择文件夹',
+        'extractor_no_files': '文件夹中没有找到文件',
+        'extractor_save_path': '保存路径',
+        'extractor_save_placeholder': '选择保存路径（留空则保存到源文件夹）',
+        'extractor_select_folder': '选择目标文件夹',
+        'extractor_select_save': '选择保存位置',
+        'extractor_preview_btn': '预览文件',
+        'extractor_export': '导出到Excel',
+        'extractor_need_pandas': '需要安装 pandas 和 openpyxl 库才能导出Excel\n请运行: pip install pandas openpyxl',
+        'extractor_export_failed': '导出失败：{}',
+        'extractor_export_done': '导出完成！\n文件已保存至：{}',
     },
 
     'en': {
@@ -97,6 +119,7 @@ LANGUAGES = {
 
         # 侧边栏功能
         'feature_quick_compress': 'Quick Compress',
+        'feature_file_extractor': 'File Name Extractor',
 
         # 关于对话框
         'about_version': 'Version: R1',
@@ -168,6 +191,27 @@ LANGUAGES = {
         'msg_need_py7zr': 'py7zr library required for 7z format\nPlease run: pip install py7zr',
         'msg_compress_done': 'Compression completed!\nFile saved to: {}',
         'msg_compress_failed': 'Compression failed: {}',
+
+        # 文件名提取
+        'extractor_folder': 'Folder Selection',
+        'extractor_folder_placeholder': 'Drag folder here, or click button to select',
+        'extractor_tip': 'Drag folder to the input above, or click "Browse..." button',
+        'extractor_browse': 'Browse...',
+        'extractor_include_ext': 'Include extension',
+        'extractor_preview': 'File Preview',
+        'extractor_status_ready': 'Ready',
+        'extractor_status_found': 'Found {} files',
+        'extractor_no_folder': 'Please select a folder first',
+        'extractor_no_files': 'No files found in folder',
+        'extractor_save_path': 'Save Path',
+        'extractor_save_placeholder': 'Select save path (leave empty to save in source folder)',
+        'extractor_select_folder': 'Select Target Folder',
+        'extractor_select_save': 'Select Save Location',
+        'extractor_preview_btn': 'Preview Files',
+        'extractor_export': 'Export to Excel',
+        'extractor_need_pandas': 'pandas and openpyxl required for Excel export\nPlease run: pip install pandas openpyxl',
+        'extractor_export_failed': 'Export failed: {}',
+        'extractor_export_done': 'Export completed!\nFile saved to: {}',
     }
 }
 

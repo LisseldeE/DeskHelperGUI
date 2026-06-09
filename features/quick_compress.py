@@ -313,6 +313,8 @@ class QuickCompressWidget(QWidget):
             # 如果没有安装py7zr，禁用7z选项
             self.format_combo.model().item(1).setEnabled(False)
             self.format_combo.model().item(1).setToolTip(t('msg_need_py7zr'))
+        # 格式变化时保存配置
+        self.format_combo.currentIndexChanged.connect(self._save_config)
         row1_layout.addWidget(self.format_combo)
 
         row1_layout.addSpacing(30)
@@ -327,6 +329,8 @@ class QuickCompressWidget(QWidget):
         for level_text in get_i18n().get_compress_levels():
             self.level_combo.addItem(level_text)
         self.level_combo.setCurrentIndex(2)  # 默认选择"标准"
+        # 级别变化时保存配置
+        self.level_combo.currentIndexChanged.connect(self._save_config)
         row1_layout.addWidget(self.level_combo)
 
         row1_layout.addStretch()
@@ -387,6 +391,9 @@ class QuickCompressWidget(QWidget):
             }
         """)
         password_layout.addWidget(self.password_input, 0, Qt.AlignVCenter)
+        
+        # 密码输入框内容变化时更新压缩按钮状态
+        self.password_input.textChanged.connect(self._update_compress_btn_state)
 
         # 显示密码复选框
         self.show_pwd_check = QCheckBox(t('compress_show_password'))
@@ -525,56 +532,92 @@ class QuickCompressWidget(QWidget):
 
         layout.addStretch()
         self.setLayout(layout)
+        
+        # 防止递归加载配置
+        self._loading_config = False
 
     def _load_config(self):
         """从配置加载设置"""
-        if self.config:
-            # 加载保存路径
-            save_path = self.config.get_save_path()
-            if save_path and os.path.exists(save_path):
-                self.save_path_input.setText(save_path)
+        # 防止递归调用
+        if self._loading_config:
+            return
+        self._loading_config = True
+        
+        try:
+            if self.config:
+                # 加载保存路径
+                save_path = self.config.get_save_path()
+                if save_path and os.path.exists(save_path):
+                    self.save_path_input.setText(save_path)
 
-            # 加载压缩设置
-            compress_settings = self.config.get_compress_settings()
-            if compress_settings:
-                # 设置压缩格式
-                format_type = compress_settings.get('format', 'ZIP')
-                index = self.format_combo.findText(format_type)
-                if index >= 0:
-                    self.format_combo.setCurrentIndex(index)
+                # 加载压缩设置
+                compress_settings = self.config.get_compress_settings()
+                if compress_settings:
+                    # 设置压缩格式
+                    format_type = compress_settings.get('format', 'ZIP')
+                    index = self.format_combo.findText(format_type)
+                    if index >= 0:
+                        self.format_combo.setCurrentIndex(index)
 
-                # 设置压缩级别
-                level = compress_settings.get('level', 2)
-                if 0 <= level < self.level_combo.count():
-                    self.level_combo.setCurrentIndex(level)
+                    # 设置压缩级别
+                    level = compress_settings.get('level', 2)
+                    if 0 <= level < self.level_combo.count():
+                        self.level_combo.setCurrentIndex(level)
 
-                # 设置加密状态
-                encrypt = compress_settings.get('encrypt', False)
-                if encrypt:
-                    self.encrypt_mode = True
-                    self.encrypt_btn.setText(t('compress_encrypt'))
-                    self.encrypt_btn.setStyleSheet("""
-                        QPushButton {
-                            background-color: #339af0;
-                            color: white;
-                            border: none;
-                            border-radius: 6px;
-                            padding: 0px;
-                            font-size: 13px;
-                            font-weight: 500;
-                        }
-                        QPushButton:hover {
-                            background-color: #228be6;
-                        }
-                    """)
-                    self._set_password_controls_visible(True)
+                    # 设置加密状态
+                    encrypt = compress_settings.get('encrypt', False)
+                    self.encrypt_mode = encrypt
+                    if encrypt:
+                        self.encrypt_btn.setText(t('compress_encrypt'))
+                        self.encrypt_btn.setStyleSheet("""
+                            QPushButton {
+                                background-color: #339af0;
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                padding: 0px;
+                                font-size: 13px;
+                                font-weight: 500;
+                            }
+                            QPushButton:hover {
+                                background-color: #228be6;
+                            }
+                        """)
+                        self._set_password_controls_visible(True)
+                    else:
+                        self.encrypt_btn.setText(t('compress_no_password'))
+                        self.encrypt_btn.setStyleSheet("""
+                            QPushButton {
+                                background-color: #e9ecef;
+                                color: #495057;
+                                border: 1px solid #ced4da;
+                                border-radius: 6px;
+                                padding: 0px;
+                                font-size: 13px;
+                                font-weight: 500;
+                            }
+                            QPushButton:hover {
+                                background-color: #dee2e6;
+                            }
+                        """)
+                        self._set_password_controls_visible(False)
+                
+                # 加载配置后更新按钮状态
+                self._update_compress_btn_state()
+        finally:
+            self._loading_config = False
 
     def _save_config(self):
         """保存设置到配置"""
+        # 防止在加载配置时触发保存
+        if self._loading_config:
+            return
+            
         if self.config:
-            # 保存保存路径
+            # 保存保存路径（统一使用 / 作为路径分隔符）
             save_path = self.save_path_input.text()
             if save_path:
+                save_path = save_path.replace('\\', '/')
                 self.config.set_save_path(save_path)
 
             # 保存压缩设置（不覆盖save_path）
@@ -588,12 +631,17 @@ class QuickCompressWidget(QWidget):
         # 检查是否有文件和保存路径
         has_files = len(self.file_list) > 0
         has_save_path = bool(self.save_path_input.text())
+        
+        # 加密模式下检查密码是否为空
+        has_password = True
+        if self.encrypt_mode:
+            has_password = bool(self.password_input.text().strip())
 
         # 检查是否只有压缩文件
         only_compress_files = self._check_only_compress_files()
 
         # 更新压缩按钮状态
-        if has_files and has_save_path:
+        if has_files and has_save_path and has_password:
             self.compress_btn.setEnabled(True)
             self.compress_btn.setStyleSheet("""
                 QPushButton {
@@ -736,9 +784,15 @@ class QuickCompressWidget(QWidget):
         # 停止并清理该widget的旧动画
         old_animation = self._fade_animations.get(widget)
         if old_animation:
+            # 先断开信号连接，避免回调被触发
+            try:
+                old_animation.finished.disconnect()
+            except:
+                pass
             old_animation.stop()
-            old_animation.deleteLater()
             self._fade_animations.pop(widget, None)
+            # 不立即删除，让Qt在安全时机处理
+            old_animation.deleteLater()
 
         # 获取或创建透明度效果
         effect = widget.graphicsEffect()
@@ -767,11 +821,9 @@ class QuickCompressWidget(QWidget):
     def _on_fade_finished(self, widget):
         """淡出动画完成回调"""
         widget.setVisible(False)
-        # 清理动画引用
+        # 清理动画引用（不要再次调用deleteLater，因为可能已经被标记删除）
         if hasattr(self, '_fade_animations'):
-            animation = self._fade_animations.pop(widget, None)
-            if animation:
-                animation.deleteLater()
+            self._fade_animations.pop(widget, None)
 
     def _set_password_controls_visible(self, visible):
         """设置密码输入区域的可见性（带渐入渐出动画）"""
@@ -822,6 +874,10 @@ class QuickCompressWidget(QWidget):
             # 清空密码
             self.password_input.clear()
             self.show_pwd_check.setChecked(False)
+        
+        # 切换加密模式后更新压缩按钮状态并保存配置
+        self._update_compress_btn_state()
+        self._save_config()
 
     def _toggle_password_visibility(self, state):
         """切换密码可见性"""
@@ -1202,6 +1258,10 @@ class QuickCompressWidget(QWidget):
 
         if success:
             self._clear_list()
+            # 清空压缩包名称和密码输入框
+            self.name_input.clear()
+            self.password_input.clear()
+            self.show_pwd_check.setChecked(False)
 
     def _start_extract(self):
         """开始解压"""

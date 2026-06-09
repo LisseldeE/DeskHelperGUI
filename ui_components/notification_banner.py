@@ -6,7 +6,6 @@ DeskHelperGUI 通知横幅组件
 
 from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QGraphicsOpacityEffect
 from PyQt5.QtCore import Qt, QTimer, QPropertyAnimation, QByteArray
-from .animated_button import AnimatedButton
 
 
 class NotificationBanner(QFrame):
@@ -36,6 +35,7 @@ class NotificationBanner(QFrame):
         self._fade_animation = None
         self._opacity_effect = None
         self._is_animating = False
+        self._is_showing = False  # 防止重复显示
 
         self.setVisible(False)
         self._init_ui()
@@ -63,7 +63,7 @@ class NotificationBanner(QFrame):
         layout.addWidget(self.msg_label, 1)
 
         # 关闭按钮
-        self.close_btn = AnimatedButton("×")
+        self.close_btn = QPushButton("×")
         self.close_btn.setFixedSize(28, 28)
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.close_btn.setStyleSheet("""
@@ -96,6 +96,11 @@ class NotificationBanner(QFrame):
             type: success / error / warning / info
             duration: 自动隐藏毫秒（0 表示不自动隐藏）
         """
+        # 防止重复显示
+        if self._is_showing:
+            return
+        self._is_showing = True
+        
         # 如果正在动画中，先停止
         self._stop_animations()
 
@@ -172,6 +177,16 @@ class NotificationBanner(QFrame):
 
     def _start_show_animation(self):
         """淡入显示"""
+        # 停止旧的动画
+        if self._fade_animation:
+            try:
+                self._fade_animation.finished.disconnect()
+            except:
+                pass
+            self._fade_animation.stop()
+            self._fade_animation.deleteLater()
+            self._fade_animation = None
+
         self._is_animating = True
 
         # 创建/获取透明度效果
@@ -200,6 +215,16 @@ class NotificationBanner(QFrame):
         if self._is_animating or not self.isVisible():
             return
 
+        # 停止旧的动画
+        if self._fade_animation:
+            try:
+                self._fade_animation.finished.disconnect()
+            except:
+                pass
+            self._fade_animation.stop()
+            self._fade_animation.deleteLater()
+            self._fade_animation = None
+
         self._is_animating = True
         self._timeout_timer.stop()
 
@@ -219,6 +244,7 @@ class NotificationBanner(QFrame):
         """淡出完成"""
         self._is_animating = False
         self._fade_animation = None
+        self._is_showing = False  # 重置显示标志
         self.setVisible(False)
 
     def _on_close_clicked(self):
@@ -228,11 +254,16 @@ class NotificationBanner(QFrame):
     def _stop_animations(self):
         """停止所有正在执行的动画"""
         if self._fade_animation:
+            try:
+                self._fade_animation.finished.disconnect()
+            except:
+                pass
             self._fade_animation.stop()
             self._fade_animation.deleteLater()
             self._fade_animation = None
         self._timeout_timer.stop()
         self._is_animating = False
+        self._is_showing = False  # 重置显示标志
 
     # ---- 事件重写 ----
 
