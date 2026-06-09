@@ -34,6 +34,9 @@ class FileNameExtractorWidget(QWidget):
 
     # 导出完成信号
     export_finished = pyqtSignal(bool, str)  # (成功, 消息)
+    
+    # 警告信号（用于显示横幅通知）
+    warning_requested = pyqtSignal(str)  # (警告消息)
 
     def __init__(self, lang='zh', config=None, parent=None):
         super().__init__(parent)
@@ -412,7 +415,7 @@ class FileNameExtractorWidget(QWidget):
     def _preview_files(self):
         """预览文件列表"""
         if not self.selected_folder:
-            QMessageBox.warning(self, t('msg_warning'), t('extractor_no_folder'))
+            self.warning_requested.emit(t('extractor_no_folder'))
             return
 
         self.file_listbox.clear()
@@ -430,16 +433,16 @@ class FileNameExtractorWidget(QWidget):
     def _export_to_excel(self):
         """导出到Excel"""
         if not HAS_PANDAS:
-            QMessageBox.critical(self, t('msg_error'), t('extractor_need_pandas'))
+            self.warning_requested.emit(t('extractor_need_pandas'))
             return
 
         if not self.selected_folder:
-            QMessageBox.warning(self, t('msg_warning'), t('extractor_no_folder'))
+            self.warning_requested.emit(t('extractor_no_folder'))
             return
 
         files = self._get_files_list()
         if not files:
-            QMessageBox.warning(self, t('msg_warning'), t('extractor_no_files'))
+            self.warning_requested.emit(t('extractor_no_files'))
             return
 
         save_path = self.save_input.text().strip()

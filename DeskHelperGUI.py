@@ -25,7 +25,7 @@ from ui_components import (
     STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE,
     AboutDialog, AnimatedButton, NotificationBanner
 )
-from features import QuickCompressWidget, FileNameExtractorWidget
+from features import QuickCompressWidget, FileNameExtractorWidget, ImageProcessorWidget
 from config_manager import ConfigManager
 from i18n import set_language, t, get_i18n
 
@@ -230,8 +230,7 @@ class MainWindow(QMainWindow):
         features = [
             ('quick_compress', t('feature_quick_compress')),
             ('file_extractor', t('feature_file_extractor')),
-            # 后续功能可以在这里添加
-            # ('feature3', t('feature3')),
+            ('image_processor', t('feature_image_processor')),
         ]
 
         for feature_id, feature_name in features:
@@ -263,13 +262,16 @@ class MainWindow(QMainWindow):
         # 创建文件名提取界面
         file_extractor_widget = FileNameExtractorWidget(self.lang, self.config)
         file_extractor_widget.export_finished.connect(self._on_extractor_finished)
+        file_extractor_widget.warning_requested.connect(self._on_extractor_warning)
         self.feature_widgets['file_extractor'] = file_extractor_widget
         self.feature_stack.addWidget(file_extractor_widget)
 
-        # 后续功能界面可以在这里添加
-        # feature3_widget = Feature3Widget(self.lang, self.config)
-        # self.feature_widgets['feature3'] = feature3_widget
-        # self.feature_stack.addWidget(feature3_widget)
+        # 创建图片处理界面
+        image_processor_widget = ImageProcessorWidget(self.lang, self.config)
+        image_processor_widget.process_finished.connect(self._on_image_finished)
+        image_processor_widget.warning_requested.connect(self._on_image_warning)
+        self.feature_widgets['image_processor'] = image_processor_widget
+        self.feature_stack.addWidget(image_processor_widget)
 
         parent_layout.addWidget(self.feature_stack)
 
@@ -328,6 +330,7 @@ class MainWindow(QMainWindow):
         features_text = {
             'quick_compress': t('feature_quick_compress'),
             'file_extractor': t('feature_file_extractor'),
+            'image_processor': t('feature_image_processor'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -380,6 +383,33 @@ class MainWindow(QMainWindow):
                 t('extractor_export_failed', message),
                 type='error', duration=5000
             )
+
+    def _on_image_finished(self, success, message):
+        """图片处理完成回调 - 显示顶部通知横幅"""
+        if success:
+            self.notification_banner.show_message(
+                t('image_done', message),
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                t('image_failed', message),
+                type='error', duration=5000
+            )
+
+    def _on_image_warning(self, message):
+        """图片处理警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=3000
+        )
+
+    def _on_extractor_warning(self, message):
+        """文件名提取警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=3000
+        )
 
     def resizeEvent(self, event):
         """主窗口大小变化时重新定位通知横幅"""
