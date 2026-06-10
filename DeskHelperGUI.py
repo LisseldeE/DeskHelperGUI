@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 DeskHelperGUI - 桌面助手GUI
-基于 Python PyQt5 的桌面助手，提供各种便捷功能
 
 项目信息：
 - 项目名称：DeskHelperGUI
@@ -33,7 +32,7 @@ from i18n import set_language, t, get_i18n
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R1"
+APP_VERSION = "R2"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 APP_REPO = "LisseldeE/DeskHelperGUI"
@@ -189,22 +188,23 @@ class MainWindow(QMainWindow):
 
         layout.addSpacing(10)
 
-        # 右侧：设置按钮（齿轮图标）
-        self.settings_btn = AnimatedButton("⚙")
+        # 右侧：设置按钮（S字母）
+        self.settings_btn = AnimatedButton("S")
         self.settings_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.settings_btn.setFixedSize(32, 32)
         self.settings_btn.setStyleSheet("""
             QPushButton {
                 background-color: #e9ecef;
-                color: black;
+                color: #495057;
                 border: 1px solid #ced4da;
                 border-radius: 6px;
                 font-size: 14px;
+                font-weight: bold;
                 padding: 0px;
             }
             QPushButton:hover {
                 background-color: #dee2e6;
-                color: black;
+                color: #339af0;
             }
         """)
         self.settings_btn.clicked.connect(self._show_settings)
@@ -227,6 +227,7 @@ class MainWindow(QMainWindow):
             }
             QPushButton:hover {
                 background-color: #dee2e6;
+                color: #339af0;
             }
         """)
         self.about_btn.clicked.connect(self._show_about)
@@ -254,6 +255,7 @@ class MainWindow(QMainWindow):
         features = [
             ('quick_compress', t('feature_quick_compress')),
             ('image_processor', t('feature_image_processor')),
+            ('format_converter', t('feature_format_converter')),
             ('file_extractor', t('feature_file_extractor')),
         ]
 
@@ -314,6 +316,17 @@ class MainWindow(QMainWindow):
         self.feature_widgets['image_processor'] = image_processor_widget
         self.feature_stack.addWidget(image_processor_widget)
 
+    def _create_format_converter_widget(self):
+        """创建格式转换界面"""
+        if 'format_converter' in self.feature_widgets:
+            return
+        from features import FormatConverterWidget
+        format_converter_widget = FormatConverterWidget(self.lang, self.config)
+        format_converter_widget.convert_finished.connect(self._on_converter_finished)
+        format_converter_widget.warning_requested.connect(self._on_converter_warning)
+        self.feature_widgets['format_converter'] = format_converter_widget
+        self.feature_stack.addWidget(format_converter_widget)
+
     def _switch_feature(self, feature_id):
         """切换功能界面"""
         if feature_id == self.current_feature:
@@ -331,6 +344,8 @@ class MainWindow(QMainWindow):
             self._create_file_extractor_widget()
         elif feature_id == 'image_processor' and feature_id not in self.feature_widgets:
             self._create_image_processor_widget()
+        elif feature_id == 'format_converter' and feature_id not in self.feature_widgets:
+            self._create_format_converter_widget()
 
         # 切换界面
         if feature_id in self.feature_widgets:
@@ -376,6 +391,7 @@ class MainWindow(QMainWindow):
             'quick_compress': t('feature_quick_compress'),
             'file_extractor': t('feature_file_extractor'),
             'image_processor': t('feature_image_processor'),
+            'format_converter': t('feature_format_converter'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -463,6 +479,27 @@ class MainWindow(QMainWindow):
 
     def _on_extractor_warning(self, message):
         """文件名提取警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=3000
+        )
+
+    def _on_converter_finished(self, success, message):
+        """格式转换完成回调 - 显示顶部通知横幅"""
+        if success:
+            # 成功时message是路径，直接显示路径
+            self.notification_banner.show_message(
+                message,
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                message,
+                type='error', duration=5000
+            )
+
+    def _on_converter_warning(self, message):
+        """格式转换警告回调 - 显示顶部通知横幅"""
         self.notification_banner.show_message(
             message,
             type='warning', duration=3000

@@ -690,6 +690,14 @@ class ImageProcessorWidget(QWidget):
         self.preview_info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.preview_info_label)
 
+        # 输出路径显示（右下角）
+        output_path_layout = QHBoxLayout()
+        output_path_layout.addStretch()
+        self.output_path_label = QLabel(t('image_output_path', ''))
+        self.output_path_label.setStyleSheet("color: #868e96; font-size: 12px;")
+        output_path_layout.addWidget(self.output_path_label)
+        layout.addLayout(output_path_layout)
+
         panel.setLayout(layout)
         return panel
 
@@ -747,8 +755,11 @@ class ImageProcessorWidget(QWidget):
 
     def _load_config(self):
         """加载配置"""
-        # 不需要加载保存路径，使用全局配置
-        pass
+        # 加载输出路径
+        if self.config:
+            save_path = self.config.get_save_path()
+            if save_path:
+                self.output_path_label.setText(t('image_output_path', save_path.replace('\\', '/')))
 
     def _update_preset_sizes(self):
         """更新预设尺寸列表"""
@@ -1109,6 +1120,8 @@ class ImageProcessorWidget(QWidget):
     
     def _apply_all_effects(self, image):
         """应用所有启用的效果"""
+        from PIL import Image
+        
         result = image.copy()
         compressed_data = None
         
@@ -1177,6 +1190,8 @@ class ImageProcessorWidget(QWidget):
 
     def _resize_image(self, image, target_w, target_h):
         """调整图片尺寸（保持比例居中裁剪）"""
+        from PIL import Image
+        
         w, h = image.size
         
         # 计算缩放比例
@@ -1199,6 +1214,8 @@ class ImageProcessorWidget(QWidget):
 
     def _compress_image(self, image, target_kb):
         """压缩图片到目标大小，返回压缩后的 bytes 数据"""
+        from PIL import Image
+        
         target_bytes = int(target_kb * 1024)
         
         print(f"[DEBUG] Target size: {target_bytes} bytes ({target_kb:.1f} KB)")
@@ -1489,3 +1506,6 @@ class ImageProcessorWidget(QWidget):
         
         if self.original_image is None:
             self.preview_label.setText(t('image_preview_placeholder'))
+        
+        # 重新加载输出路径
+        self._load_config()

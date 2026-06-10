@@ -117,13 +117,9 @@ class FileNameExtractorWidget(QWidget):
 
         # 预览区域
         self.preview_group = QGroupBox(t('extractor_preview'))
-        preview_main_layout = QHBoxLayout()
-        preview_main_layout.setSpacing(10)
+        preview_main_layout = QVBoxLayout()
+        preview_main_layout.setSpacing(8)
         preview_main_layout.setContentsMargins(10, 15, 10, 15)
-
-        # 左侧：文件列表
-        preview_list_layout = QVBoxLayout()
-        preview_list_layout.setSpacing(8)
 
         # 文件列表
         self.file_listbox = QListWidget()
@@ -148,16 +144,14 @@ class FileNameExtractorWidget(QWidget):
                 background-color: #f1f3f5;
             }
         """)
-        preview_list_layout.addWidget(self.file_listbox, 1)
+        preview_main_layout.addWidget(self.file_listbox, 1)
 
         # 状态标签
         self.status_label = QLabel(t('extractor_status_ready'))
         self.status_label.setStyleSheet("color: #868e96; font-size: 12px;")
-        preview_list_layout.addWidget(self.status_label)
+        preview_main_layout.addWidget(self.status_label)
 
-        preview_main_layout.addLayout(preview_list_layout, 1)
-
-        # 右侧：包含扩展名选项
+        # 包含扩展名选项（放在状态标签下方）
         self.include_ext_check = QCheckBox(t('extractor_include_ext'))
         self.include_ext_check.setChecked(True)
         self.include_ext_check.setStyleSheet("""
@@ -184,6 +178,14 @@ class FileNameExtractorWidget(QWidget):
         """)
         self.include_ext_check.stateChanged.connect(self._auto_refresh_preview)
         preview_main_layout.addWidget(self.include_ext_check)
+        
+        # 输出路径显示（右下角）
+        output_path_layout = QHBoxLayout()
+        output_path_layout.addStretch()
+        self.output_path_label = QLabel(t('extractor_output_path', ''))
+        self.output_path_label.setStyleSheet("color: #868e96; font-size: 12px;")
+        output_path_layout.addWidget(self.output_path_label)
+        preview_main_layout.addLayout(output_path_layout)
 
         self.preview_group.setLayout(preview_main_layout)
         layout.addWidget(self.preview_group, 1)  # 让预览区域占据剩余空间
@@ -271,8 +273,11 @@ class FileNameExtractorWidget(QWidget):
         self._loading_config = True
         
         try:
-            # 不需要加载保存路径，使用全局配置
-            pass
+            # 加载输出路径
+            if self.config:
+                save_path = self.config.get_save_path()
+                if save_path:
+                    self.output_path_label.setText(t('extractor_output_path', save_path.replace('\\', '/')))
         finally:
             self._loading_config = False
 
@@ -458,3 +463,6 @@ class FileNameExtractorWidget(QWidget):
         self.status_label.setText(t('extractor_status_ready'))
         self.preview_btn.setText(t('extractor_preview_btn'))
         self.export_btn.setText(t('extractor_export'))
+        
+        # 重新加载输出路径
+        self._load_config()

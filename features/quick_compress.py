@@ -423,6 +423,14 @@ class QuickCompressWidget(QWidget):
         row2_layout.addStretch()
         settings_layout.addLayout(row2_layout)
 
+        # 输出路径显示（右下角）
+        output_path_layout = QHBoxLayout()
+        output_path_layout.addStretch()
+        self.output_path_label = QLabel(t('compress_output_path', ''))
+        self.output_path_label.setStyleSheet("color: #868e96; font-size: 12px;")
+        output_path_layout.addWidget(self.output_path_label)
+        settings_layout.addLayout(output_path_layout)
+
         self.settings_group.setLayout(settings_layout)
         layout.addWidget(self.settings_group)
         # 文件列表区域占据剩余空间弹性，设置区域占自然高度
@@ -591,6 +599,11 @@ class QuickCompressWidget(QWidget):
                         """)
                         self._set_password_controls_visible(False)
                 
+                # 加载输出路径
+                save_path = self.config.get_save_path()
+                if save_path:
+                    self.output_path_label.setText(t('compress_output_path', save_path.replace('\\', '/')))
+                
                 # 加载配置后更新按钮状态
                 self._update_compress_btn_state()
         finally:
@@ -748,6 +761,9 @@ class QuickCompressWidget(QWidget):
             self.format_combo.setToolTip(t('msg_need_py7zr'))
         else:
             self.format_combo.setToolTip('')
+        
+        # 重新加载输出路径
+        self._load_config()
 
     def _fade_widget(self, widget, visible, duration=150):
         """

@@ -7,7 +7,7 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 ## Project Information
 
 - **Project Name**: DeskHelperGUI
-- **Version**: R1
+- **Version**: R2
 - **Author**: Lisselde_E
 - **Email**: Lisselde.E@outlook.com
 - **Repository**: https://github.com/LisseldeE/DeskHelperGUI
@@ -29,6 +29,13 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - **Rotate Image**: Choose rotation angle
 - **Crop Image**: Provide preset size options (e.g., ID photo sizes)
 - **Compress Image**: Provide compression size adjustment slider with real-time preview of compressed size
+
+### Format Conversion
+- Import single file or batch process folders
+- **Image Format Conversion**: Support JPG, PNG, ICO, BMP, GIF, WebP format conversion
+- **PDF to Image**: Convert PDF to JPG or PNG format
+- **ICO Format**: Support 16×16 to 256×256 multiple size options, auto-adjust ratio
+- Use global save path, support drag-and-drop import
 
 ## Update Log
 
@@ -57,6 +64,19 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - Optimized image processing logic
 - Fixed button jumping issue when adjusting window size
 
+### 2026.6.10 R2
+**#01**
+- Added global settings button
+- Changed save path to global save path, removed individual configuration in modules
+- Added save path configuration dialog on startup
+- Optimized program startup speed
+
+**#02**
+- Added feature - Format conversion
+- Added PDF to JPG, PNG format options
+- Optimized interface notification banner style
+- Optimized output path display in other modules
+
 ## Technology Stack
 
 - Python 3.x
@@ -72,7 +92,7 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 
 ### Install Dependencies
 ```bash
-pip install PyQt5 Pillow pandas openpyxl
+pip install PyQt5 Pillow pandas openpyxl PyMuPDF
 ```
 
 ### Run Program
