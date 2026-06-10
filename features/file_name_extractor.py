@@ -21,12 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
 
-# 尝试导入pandas和openpyxl（用于Excel导出）
-try:
-    import pandas as pd
-    HAS_PANDAS = True
-except ImportError:
-    HAS_PANDAS = False
+# pandas延迟导入（优化启动速度）
+HAS_PANDAS = None  # 延迟检测
 
 
 class FileNameExtractorWidget(QWidget):
@@ -192,59 +188,12 @@ class FileNameExtractorWidget(QWidget):
         self.preview_group.setLayout(preview_main_layout)
         layout.addWidget(self.preview_group, 1)  # 让预览区域占据剩余空间
 
-        # 保存路径区域
-        self.save_group = QGroupBox(t('extractor_save_path'))
-        save_layout = QHBoxLayout()
-        save_layout.setSpacing(10)
-        save_layout.setContentsMargins(10, 15, 10, 15)
-
-        self.save_input = QLineEdit()
-        self.save_input.setPlaceholderText(t('extractor_save_placeholder'))
-        self.save_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #f8f9fa;
-                color: #495057;
-                border: 1px solid #dee2e6;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #339af0;
-            }
-        """)
-        save_layout.addWidget(self.save_input, 1)
-
-        self.save_browse_btn = AnimatedButton(t('extractor_browse'))
-        self.save_browse_btn.setFixedSize(100, 36)
-        self.save_browse_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e9ecef;
-                color: #495057;
-                border: 1px solid #ced4da;
-                border-radius: 6px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #dee2e6;
-                border-color: #adb5bd;
-            }
-            QPushButton:pressed {
-                background-color: #ced4da;
-            }
-        """)
-        self.save_browse_btn.clicked.connect(self._browse_save_path)
-        save_layout.addWidget(self.save_browse_btn)
-
-        self.save_group.setLayout(save_layout)
-        layout.addWidget(self.save_group)
-
         # 按钮区域
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(15)
 
         # 预览按钮
-        self.preview_btn = AnimatedButton(t('extractor_preview'))
+        self.preview_btn = AnimatedButton(t('extractor_preview_btn'))
         self.preview_btn.setFixedSize(120, 40)
         self.preview_btn.setStyleSheet("""
             QPushButton {
@@ -322,30 +271,15 @@ class FileNameExtractorWidget(QWidget):
         self._loading_config = True
         
         try:
-            if self.config:
-                # 使用全局保存路径
-                save_path = self.config.get_save_path()
-                if save_path:
-                    self.save_input.setText(save_path)
+            # 不需要加载保存路径，使用全局配置
+            pass
         finally:
             self._loading_config = False
 
     def _save_config(self):
         """保存配置"""
-        if self.config:
-            path = self.save_input.text().strip()
-            # 只保存目录路径，不保存具体文件名
-            if path:
-                if os.path.isfile(path):
-                    path = os.path.dirname(path)
-                elif not os.path.isdir(path):
-                    # 如果路径不存在，尝试提取目录部分
-                    if '.' in os.path.basename(path):  # 看起来像文件名
-                        path = os.path.dirname(path)
-            if path:
-                # 统一使用 / 作为路径分隔符
-                path = path.replace('\\', '/')
-                self.config.set_save_path(path)
+        # 不需要保存保存路径，使用全局配置
+        pass
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         """拖拽进入事件"""
@@ -371,17 +305,6 @@ class FileNameExtractorWidget(QWidget):
             self.selected_folder = folder
             self.folder_input.setText(folder)
             self._auto_refresh_preview()  # 自动刷新预览
-
-    def _browse_save_path(self):
-        """浏览选择保存路径"""
-        default_name = f"文件名列表_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, t('extractor_select_save'),
-            default_name,
-            "Excel文件 (*.xlsx)"
-        )
-        if file_path:
-            self.save_input.setText(file_path)
 
     def _auto_refresh_preview(self):
         """自动刷新预览（当文件夹已选择时）"""
@@ -432,6 +355,15 @@ class FileNameExtractorWidget(QWidget):
 
     def _export_to_excel(self):
         """导出到Excel"""
+        # 延迟检测pandas（优化启动速度）
+        global HAS_PANDAS
+        if HAS_PANDAS is None:
+            try:
+                import pandas as pd
+                HAS_PANDAS = True
+            except ImportError:
+                HAS_PANDAS = False
+        
         if not HAS_PANDAS:
             self.warning_requested.emit(t('extractor_need_pandas'))
             return
@@ -445,7 +377,8 @@ class FileNameExtractorWidget(QWidget):
             self.warning_requested.emit(t('extractor_no_files'))
             return
 
-        save_path = self.save_input.text().strip()
+        # 使用全局保存路径
+        save_path = self.config.get_save_path() if self.config else ""
         
         # 获取文件夹名称作为文件名
         folder_name = os.path.basename(self.selected_folder)
@@ -455,13 +388,11 @@ class FileNameExtractorWidget(QWidget):
             # 使用默认文件名（保存到源文件夹）
             save_path = os.path.join(self.selected_folder, default_filename)
         elif os.path.isdir(save_path):
-            # 如果输入的是目录路径，在该目录下创建文件
+            # 如果是目录路径，在该目录下创建文件
             save_path = os.path.join(save_path, default_filename)
         elif not save_path.endswith('.xlsx'):
             # 如果没有扩展名，添加扩展名
             save_path += '.xlsx'
-
-        # 不保存临时文件名到配置，导出完成后会清空输入框
 
         # 显示进度条
         self.progress_bar.setVisible(True)
@@ -473,6 +404,8 @@ class FileNameExtractorWidget(QWidget):
         # 在线程中执行导出
         def do_export():
             try:
+                import pandas as pd  # 在线程中导入
+                
                 # 创建DataFrame，序号从1开始
                 df = pd.DataFrame({
                     '序号': range(1, len(files) + 1),
@@ -508,8 +441,6 @@ class FileNameExtractorWidget(QWidget):
             self.folder_input.clear()
             self.file_listbox.clear()
             self.status_label.setText(t('extractor_status_ready'))
-            # 重新加载配置中的保存路径（不清空）
-            self._load_config()
         
         # 通知横幅会在主窗口中显示，这里不需要弹窗
 
@@ -525,8 +456,5 @@ class FileNameExtractorWidget(QWidget):
         self.preview_group.setTitle(t('extractor_preview'))
         self.include_ext_check.setText(t('extractor_include_ext'))
         self.status_label.setText(t('extractor_status_ready'))
-        self.save_group.setTitle(t('extractor_save_path'))
-        self.save_input.setPlaceholderText(t('extractor_save_placeholder'))
-        self.save_browse_btn.setText(t('extractor_browse'))
         self.preview_btn.setText(t('extractor_preview_btn'))
         self.export_btn.setText(t('extractor_export'))

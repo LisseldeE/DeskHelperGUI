@@ -21,12 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
 
-# 尝试导入PIL（用于图片处理）
-try:
-    from PIL import Image
-    HAS_PIL = True
-except ImportError:
-    HAS_PIL = False
+# PIL延迟导入（优化启动速度）
+HAS_PIL = None  # 延迟检测
 
 
 # 预设尺寸配置（单位：像素，按照300DPI标准）
@@ -138,9 +134,6 @@ class ImageProcessorWidget(QWidget):
         
         splitter.setSizes([300, 400])
         main_layout.addWidget(splitter, 1)
-
-        # 保存路径区域
-        self._create_save_area(main_layout)
 
         # 按钮区域
         self._create_buttons(main_layout)
@@ -697,73 +690,8 @@ class ImageProcessorWidget(QWidget):
         self.preview_info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.preview_info_label)
 
-        # 导出文件名预览
-        self.export_filename_label = QLabel("")
-        self.export_filename_label.setStyleSheet("""
-            QLabel {
-                color: #495057;
-                font-size: 12px;
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                padding: 6px 10px;
-            }
-        """)
-        self.export_filename_label.setAlignment(Qt.AlignCenter)
-        self.export_filename_label.setWordWrap(True)
-        layout.addWidget(self.export_filename_label)
-
         panel.setLayout(layout)
         return panel
-
-    def _create_save_area(self, parent_layout):
-        """创建保存路径区域"""
-        self.save_group = QGroupBox(t('image_save_path'))
-        save_layout = QHBoxLayout()
-        save_layout.setSpacing(8)
-        save_layout.setContentsMargins(8, 10, 8, 10)
-
-        self.save_input = QLineEdit()
-        self.save_input.setPlaceholderText(t('image_save_placeholder'))
-        self.save_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #f8f9fa;
-                color: #495057;
-                border: 1px solid #dee2e6;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #339af0;
-            }
-        """)
-        self.save_input.textChanged.connect(self._update_export_filename_preview)
-        save_layout.addWidget(self.save_input, 1)
-
-        self.save_browse_btn = AnimatedButton(t('image_browse'))
-        self.save_browse_btn.setFixedSize(90, 34)
-        self.save_browse_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e9ecef;
-                color: #495057;
-                border: 1px solid #ced4da;
-                border-radius: 6px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #dee2e6;
-                border-color: #adb5bd;
-            }
-            QPushButton:pressed {
-                background-color: #ced4da;
-            }
-        """)
-        self.save_browse_btn.clicked.connect(self._browse_save_path)
-        save_layout.addWidget(self.save_browse_btn)
-
-        self.save_group.setLayout(save_layout)
-        parent_layout.addWidget(self.save_group)
 
     def _create_buttons(self, parent_layout):
         """创建按钮区域"""
@@ -819,10 +747,8 @@ class ImageProcessorWidget(QWidget):
 
     def _load_config(self):
         """加载配置"""
-        if self.config:
-            save_path = self.config.get_save_path()
-            if save_path:
-                self.save_input.setText(save_path)
+        # 不需要加载保存路径，使用全局配置
+        pass
 
     def _update_preset_sizes(self):
         """更新预设尺寸列表"""
@@ -960,6 +886,15 @@ class ImageProcessorWidget(QWidget):
 
     def _load_image(self, file_path):
         """加载图片"""
+        # 延迟检测PIL（优化启动速度）
+        global HAS_PIL
+        if HAS_PIL is None:
+            try:
+                from PIL import Image
+                HAS_PIL = True
+            except ImportError:
+                HAS_PIL = False
+        
         if not HAS_PIL:
             QMessageBox.critical(self, t('msg_error'), t('image_need_pil'))
             return
@@ -968,6 +903,8 @@ class ImageProcessorWidget(QWidget):
         self._loading_image = True
         
         try:
+            from PIL import Image  # 在方法中导入
+            
             # 显示文件路径
             self.file_input.setText(file_path)
             
@@ -1028,14 +965,6 @@ class ImageProcessorWidget(QWidget):
                 self._display_preview_from_file(file_path)
             except Exception as preview_error:
                 print(f"预览显示失败: {preview_error}")
-            
-            # 自动设置保存路径（保持原始格式）
-            dir_path = os.path.dirname(file_path)
-            filename = os.path.splitext(os.path.basename(file_path))[0]
-            # 使用原始文件扩展名
-            save_filename = f"{filename}_processed{self.original_file_ext}"
-            save_path = os.path.join(dir_path, save_filename)
-            self.save_input.setText(save_path)
             
         except Exception as e:
             QMessageBox.critical(self, t('msg_error'), t('image_load_failed', str(e)))
@@ -1108,20 +1037,6 @@ class ImageProcessorWidget(QWidget):
             return f'{size_bytes / 1024:.1f} KB'
         else:
             return f'{size_bytes} B'
-
-    def _update_export_filename_preview(self):
-        """更新导出文件名预览"""
-        save_path = self.save_input.text().strip()
-        if save_path:
-            # 确保显示的是文件名，且扩展名与原始格式一致
-            filename = os.path.basename(save_path)
-            name, ext = os.path.splitext(filename)
-            # 如果有原始文件扩展名，使用原始格式
-            if self.original_file_ext:
-                filename = f"{name}{self.original_file_ext}"
-            self.export_filename_label.setText(f"导出文件: {filename}")
-        else:
-            self.export_filename_label.setText("")
 
     def _display_preview(self, image):
         """显示预览图片（用于处理后的图片）"""
@@ -1397,9 +1312,6 @@ class ImageProcessorWidget(QWidget):
         self.preview_label.setText(t('image_preview_placeholder'))
         self.preview_info_label.setText('')
         
-        # 清除导出文件名预览
-        self.export_filename_label.setText('')
-        
         # 重置旋转设置
         self.rotate_enable_check.setChecked(False)
         self.angle_combo.setCurrentIndex(0)  # 90度
@@ -1424,42 +1336,17 @@ class ImageProcessorWidget(QWidget):
         
         # 不清除保存路径输入框，保留用户设置的路径
 
-    def _browse_save_path(self):
-        """浏览选择保存路径"""
-        if self.original_file_path:
-            # 使用原始文件扩展名
-            default_name = os.path.splitext(os.path.basename(self.original_file_path))[0] + "_processed" + self.original_file_ext
-        else:
-            default_name = "processed_image.png"
-        
-        # 根据原始格式设置文件过滤器
-        if self.original_file_ext in ['.jpg', '.jpeg']:
-            filter_str = f"{t('image_files')} (*.jpg *.jpeg)"
-        elif self.original_file_ext == '.png':
-            filter_str = f"{t('image_files')} (*.png)"
-        elif self.original_file_ext == '.bmp':
-            filter_str = f"{t('image_files')} (*.bmp)"
-        elif self.original_file_ext == '.webp':
-            filter_str = f"{t('image_files')} (*.webp)"
-        elif self.original_file_ext == '.gif':
-            filter_str = f"{t('image_files')} (*.gif)"
-        else:
-            filter_str = f"{t('image_files')} (*.png *.jpg *.jpeg *.bmp *.webp *.gif)"
-            
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, t('image_select_save'),
-            default_name,
-            filter_str
-        )
-        if file_path:
-            # 确保文件扩展名与原始格式一致
-            ext = os.path.splitext(file_path)[1].lower()
-            if self.original_file_ext and ext != self.original_file_ext:
-                file_path = os.path.splitext(file_path)[0] + self.original_file_ext
-            self.save_input.setText(file_path)
-
     def _process_and_save(self):
         """处理并保存图片"""
+        # 延迟检测PIL（优化启动速度）
+        global HAS_PIL
+        if HAS_PIL is None:
+            try:
+                from PIL import Image
+                HAS_PIL = True
+            except ImportError:
+                HAS_PIL = False
+        
         if not HAS_PIL:
             QMessageBox.critical(self, t('msg_error'), t('image_need_pil'))
             return
@@ -1475,7 +1362,8 @@ class ImageProcessorWidget(QWidget):
             self.warning_requested.emit(t('image_no_effect'))
             return
 
-        save_path = self.save_input.text().strip()
+        # 使用全局保存路径
+        save_path = self.config.get_save_path() if self.config else ""
         if not save_path:
             self.warning_requested.emit(t('msg_select_path'))
             return
@@ -1488,6 +1376,8 @@ class ImageProcessorWidget(QWidget):
         
         def do_process():
             try:
+                from PIL import Image  # 在线程中导入
+                
                 # 使用信号更新进度条（线程安全）
                 self.progress_updated.emit(20)
                 
@@ -1495,12 +1385,15 @@ class ImageProcessorWidget(QWidget):
                 
                 self.progress_updated.emit(60)
                 
-                # 确保保存路径使用原始格式
-                ext = os.path.splitext(save_path)[1].lower()
-                final_save_path = save_path
-                # 如果路径扩展名与原始格式不一致，使用原始格式
-                if ext != self.original_file_ext:
-                    final_save_path = os.path.splitext(save_path)[0] + self.original_file_ext
+                # 生成输出文件名
+                if self.original_file_path:
+                    base_name = os.path.splitext(os.path.basename(self.original_file_path))[0]
+                    default_name = f"{base_name}_processed{self.original_file_ext}"
+                else:
+                    default_name = f"processed_image{self.original_file_ext or '.png'}"
+                
+                # 使用全局保存路径（目录）+ 文件名
+                final_save_path = os.path.join(save_path, default_name)
                 
                 print(f"[DEBUG] Saving to: {final_save_path}")
                 print(f"[DEBUG] Original format: {self.original_file_ext}")
@@ -1590,10 +1483,6 @@ class ImageProcessorWidget(QWidget):
         
         self.compress_enable_check.setText(t('image_enable'))
         self.estimate_label.setText("")
-        
-        self.save_group.setTitle(t('image_save_path'))
-        self.save_input.setPlaceholderText(t('image_save_placeholder'))
-        self.save_browse_btn.setText(t('image_browse'))
         
         self.reset_btn.setText(t('image_reset'))
         self.save_btn.setText(t('image_save'))

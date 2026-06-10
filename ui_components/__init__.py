@@ -7,6 +7,7 @@ from .styles import STYLESHEET, COLORS, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACT
 from .animated_button import AnimatedButton
 from .about_dialog import AboutDialog
 from .notification_banner import NotificationBanner
+from .settings_dialog import SettingsDialog
 
 __all__ = [
     'STYLESHEET',
@@ -16,4 +17,5 @@ __all__ = [
     'AnimatedButton',
     'AboutDialog',
     'NotificationBanner',
+    'SettingsDialog',
 ]

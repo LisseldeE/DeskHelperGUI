@@ -25,19 +25,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
 
-# 尝试导入py7zr（用于7z格式支持）
-try:
-    import py7zr
-    HAS_PY7ZR = True
-except ImportError:
-    HAS_PY7ZR = False
-
-# 尝试导入pyzipper（用于ZIP加密支持）
-try:
-    import pyzipper
-    HAS_PYZIPPER = True
-except ImportError:
-    HAS_PYZIPPER = False
+# py7zr和pyzipper延迟导入（优化启动速度）
+HAS_PY7ZR = None  # 延迟检测
+HAS_PYZIPPER = None  # 延迟检测
 
 
 
@@ -117,6 +107,30 @@ class QuickCompressWidget(QWidget):
     extract_finished = pyqtSignal(bool, str)   # (成功, 消息)
     # 请求密码信号（用于线程安全的密码对话框）
     password_requested = pyqtSignal()  # 请求显示密码对话框
+
+    @staticmethod
+    def _check_py7zr():
+        """延迟检测py7zr库"""
+        global HAS_PY7ZR
+        if HAS_PY7ZR is None:
+            try:
+                import py7zr
+                HAS_PY7ZR = True
+            except ImportError:
+                HAS_PY7ZR = False
+        return HAS_PY7ZR
+
+    @staticmethod
+    def _check_pyzipper():
+        """延迟检测pyzipper库"""
+        global HAS_PYZIPPER
+        if HAS_PYZIPPER is None:
+            try:
+                import pyzipper
+                HAS_PYZIPPER = True
+            except ImportError:
+                HAS_PYZIPPER = False
+        return HAS_PYZIPPER
 
     def __init__(self, lang='zh', config=None, parent=None):
         super().__init__(parent)
@@ -309,7 +323,7 @@ class QuickCompressWidget(QWidget):
                 color: #adb5bd;
             }
         """)
-        if not HAS_PY7ZR:
+        if not self._check_py7zr():
             # 如果没有安装py7zr，禁用7z选项
             self.format_combo.model().item(1).setEnabled(False)
             self.format_combo.model().item(1).setToolTip(t('msg_need_py7zr'))
@@ -408,26 +422,6 @@ class QuickCompressWidget(QWidget):
 
         row2_layout.addStretch()
         settings_layout.addLayout(row2_layout)
-
-        # 第四行：保存路径
-        row3_layout = QHBoxLayout()
-        row3_layout.setAlignment(Qt.AlignVCenter)  # 设置垂直居中对齐
-
-        self.save_label = QLabel(t('compress_save_path'))
-        row3_layout.addWidget(self.save_label, 0, Qt.AlignVCenter)
-
-        self.save_path_input = QLineEdit()
-        self.save_path_input.setPlaceholderText(t('compress_save_placeholder'))
-        self.save_path_input.setReadOnly(True)
-        self.save_path_input.setFixedHeight(36)  # 固定高度
-        row3_layout.addWidget(self.save_path_input, 0, Qt.AlignVCenter)
-
-        self.browse_btn = AnimatedButton(t('compress_browse'))
-        self.browse_btn.setFixedHeight(36)  # 与输入框高度一致，防止中文显示不全
-        self.browse_btn.clicked.connect(self._browse_save_path)
-        row3_layout.addWidget(self.browse_btn, 0, Qt.AlignVCenter)
-
-        settings_layout.addLayout(row3_layout)
 
         self.settings_group.setLayout(settings_layout)
         layout.addWidget(self.settings_group)
@@ -545,11 +539,6 @@ class QuickCompressWidget(QWidget):
         
         try:
             if self.config:
-                # 加载保存路径
-                save_path = self.config.get_save_path()
-                if save_path and os.path.exists(save_path):
-                    self.save_path_input.setText(save_path)
-
                 # 加载压缩设置
                 compress_settings = self.config.get_compress_settings()
                 if compress_settings:
@@ -614,13 +603,7 @@ class QuickCompressWidget(QWidget):
             return
             
         if self.config:
-            # 保存保存路径（统一使用 / 作为路径分隔符）
-            save_path = self.save_path_input.text()
-            if save_path:
-                save_path = save_path.replace('\\', '/')
-                self.config.set_save_path(save_path)
-
-            # 保存压缩设置（不覆盖save_path）
+            # 保存压缩设置（不保存save_path，使用全局配置）
             self.config.set('compress.format', self.format_combo.currentText())
             self.config.set('compress.level', self.level_combo.currentIndex())
             self.config.set('compress.encrypt', self.encrypt_mode)
@@ -628,9 +611,8 @@ class QuickCompressWidget(QWidget):
 
     def _update_compress_btn_state(self):
         """更新压缩按钮和解压按钮状态"""
-        # 检查是否有文件和保存路径
+        # 检查是否有文件
         has_files = len(self.file_list) > 0
-        has_save_path = bool(self.save_path_input.text())
         
         # 加密模式下检查密码是否为空
         has_password = True
@@ -641,7 +623,7 @@ class QuickCompressWidget(QWidget):
         only_compress_files = self._check_only_compress_files()
 
         # 更新压缩按钮状态
-        if has_files and has_save_path and has_password:
+        if has_files and has_password:
             self.compress_btn.setEnabled(True)
             self.compress_btn.setStyleSheet("""
                 QPushButton {
@@ -685,7 +667,7 @@ class QuickCompressWidget(QWidget):
             """)
 
         # 更新解压按钮状态（带渐入渐出动画）
-        if only_compress_files and has_save_path:
+        if only_compress_files:
             # 设置解压按钮样式和启用状态
             self.extract_btn.setEnabled(True)
             self.extract_btn.setStyleSheet("""
@@ -758,14 +740,11 @@ class QuickCompressWidget(QWidget):
         self.password_label.setText(t('compress_password'))
         self.password_input.setPlaceholderText(t('compress_password_placeholder'))
         self.show_pwd_check.setText(t('compress_show_password'))
-        self.save_label.setText(t('compress_save_path'))
-        self.save_path_input.setPlaceholderText(t('compress_save_placeholder'))
-        self.browse_btn.setText(t('compress_browse'))
         self.compress_btn.setText(t('compress_start'))
         self.extract_btn.setText(t('extract_start'))
 
         # 更新7z提示
-        if not HAS_PY7ZR:
+        if not self._check_py7zr():
             self.format_combo.setToolTip(t('msg_need_py7zr'))
         else:
             self.format_combo.setToolTip('')
@@ -989,20 +968,6 @@ class QuickCompressWidget(QWidget):
 
         # 更新压缩按钮状态
         self._update_compress_btn_state()
-
-    def _browse_save_path(self):
-        """浏览保存路径"""
-        folder = QFileDialog.getExistingDirectory(
-            self,
-            t('compress_select_save')
-        )
-        if folder:
-            self.save_path_input.setText(folder)
-            # 立即保存到配置
-            self._save_config()
-            # 更新压缩按钮状态
-            self._update_compress_btn_state()
-
     def dragEnterEvent(self, event: QDragEnterEvent):
         """拖拽进入事件"""
         if event.mimeData().hasUrls():
@@ -1030,7 +995,8 @@ class QuickCompressWidget(QWidget):
             QMessageBox.warning(self, t('msg_warning'), t('msg_add_files'))
             return
 
-        save_path = self.save_path_input.text()
+        # 使用全局保存路径
+        save_path = self.config.get_save_path() if self.config else ""
         if not save_path:
             QMessageBox.warning(self, t('msg_warning'), t('msg_select_path'))
             return
@@ -1041,7 +1007,7 @@ class QuickCompressWidget(QWidget):
 
         # 检查格式依赖
         format_type = self.format_combo.currentText()
-        if format_type == '7z' and not HAS_PY7ZR:
+        if format_type == '7z' and not self._check_py7zr():
             QMessageBox.warning(self, t('msg_warning'), t('msg_need_py7zr'))
             return
         # 保存配置
@@ -1058,7 +1024,6 @@ class QuickCompressWidget(QWidget):
         format_type = self.format_combo.currentText()
         level_index = self.level_combo.currentIndex()
         password = self.password_input.text() if self.encrypt_mode else None
-        save_path = self.save_path_input.text()
         custom_name = self.name_input.text().strip()
         file_list = self.file_list.copy()  # 复制文件列表
 
@@ -1132,8 +1097,10 @@ class QuickCompressWidget(QWidget):
 
         # 如果需要加密，检查是否有pyzipper
         if password:
-            if not HAS_PYZIPPER:
+            if not self._check_pyzipper():
                 raise Exception("需要安装 pyzipper 库才能加密ZIP文件\n请运行: pip install pyzipper\n或使用7z格式进行加密压缩")
+            
+            import pyzipper  # 在线程中导入
             
             # 使用pyzipper进行AES加密压缩
             with pyzipper.AESZipFile(output_path, 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
@@ -1178,8 +1145,10 @@ class QuickCompressWidget(QWidget):
 
     def _compress_7z(self, output_path, level_index, password, file_list):
         """7z格式压缩"""
-        if not HAS_PY7ZR:
+        if not self._check_py7zr():
             raise Exception("py7zr library not installed")
+
+        import py7zr  # 在线程中导入
 
         # 7z压缩级别映射
         level_map = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9}
@@ -1270,7 +1239,8 @@ class QuickCompressWidget(QWidget):
             QMessageBox.warning(self, t('msg_warning'), t('msg_add_files'))
             return
 
-        save_path = self.save_path_input.text()
+        # 使用全局保存路径
+        save_path = self.config.get_save_path() if self.config else ""
         if not save_path:
             QMessageBox.warning(self, t('msg_warning'), t('msg_select_path'))
             return
@@ -1381,8 +1351,9 @@ class QuickCompressWidget(QWidget):
         while True:
             try:
                 if password:
-                    if not HAS_PYZIPPER:
+                    if not self._check_pyzipper():
                         raise Exception("需要安装 pyzipper 库才能解压加密ZIP文件\n请运行: pip install pyzipper")
+                    import pyzipper  # 在线程中导入
                     with pyzipper.AESZipFile(archive_path, 'r') as zf:
                         zf.setpassword(password.encode('utf-8'))
                         self._extract_and_fix_filenames(zf, output_dir)
@@ -1499,8 +1470,10 @@ class QuickCompressWidget(QWidget):
 
     def _extract_7z(self, archive_path, output_dir):
         """解压7z文件（密码对话框只在需要时弹出一次）"""
-        if not HAS_PY7ZR:
+        if not self._check_py7zr():
             raise Exception("需要安装 py7zr 库才能解压7z文件\n请运行: pip install py7zr")
+        
+        import py7zr  # 在线程中导入
         
         os.makedirs(output_dir, exist_ok=True)
         

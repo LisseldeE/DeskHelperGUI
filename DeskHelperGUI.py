@@ -23,11 +23,13 @@ from PyQt5.QtGui import QIcon, QFont
 
 from ui_components import (
     STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE,
-    AboutDialog, AnimatedButton, NotificationBanner
+    AboutDialog, AnimatedButton, NotificationBanner, SettingsDialog
 )
-from features import QuickCompressWidget, FileNameExtractorWidget, ImageProcessorWidget
 from config_manager import ConfigManager
 from i18n import set_language, t, get_i18n
+
+# 延迟导入功能模块（优化启动速度）
+# from features import QuickCompressWidget, FileNameExtractorWidget, ImageProcessorWidget
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
@@ -187,19 +189,41 @@ class MainWindow(QMainWindow):
 
         layout.addSpacing(10)
 
-        # 右侧：关于按钮
-        self.about_btn = AnimatedButton(t('about'))
+        # 右侧：设置按钮（齿轮图标）
+        self.settings_btn = AnimatedButton("⚙")
+        self.settings_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.settings_btn.setFixedSize(32, 32)
+        self.settings_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e9ecef;
+                color: black;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                font-size: 14px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #dee2e6;
+                color: black;
+            }
+        """)
+        self.settings_btn.clicked.connect(self._show_settings)
+        layout.addWidget(self.settings_btn)
+
+        layout.addSpacing(10)
+
+        # 右侧：关于按钮（i图标）
+        self.about_btn = AnimatedButton("i")
         self.about_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.about_btn.setFixedHeight(32)
+        self.about_btn.setFixedSize(32, 32)
         self.about_btn.setStyleSheet("""
             QPushButton {
                 background-color: #e9ecef;
                 color: #495057;
                 border: 1px solid #ced4da;
                 border-radius: 6px;
-                font-size: 12px;
-                padding: 0 12px;
-                min-width: 50px;
+                font-size: 14px;
+                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #dee2e6;
@@ -229,8 +253,8 @@ class MainWindow(QMainWindow):
         # 功能按钮列表
         features = [
             ('quick_compress', t('feature_quick_compress')),
-            ('file_extractor', t('feature_file_extractor')),
             ('image_processor', t('feature_image_processor')),
+            ('file_extractor', t('feature_file_extractor')),
         ]
 
         for feature_id, feature_name in features:
@@ -252,28 +276,43 @@ class MainWindow(QMainWindow):
         self.feature_stack = QStackedWidget()
         self.feature_stack.setStyleSheet("background-color: #f8f9fa;")
 
-        # 创建快捷压缩界面
+        # 只创建默认功能界面（快捷压缩），其他界面延迟创建
+        self._create_quick_compress_widget()
+
+        parent_layout.addWidget(self.feature_stack)
+
+    def _create_quick_compress_widget(self):
+        """创建快捷压缩界面"""
+        if 'quick_compress' in self.feature_widgets:
+            return
+        from features import QuickCompressWidget
         quick_compress_widget = QuickCompressWidget(self.lang, self.config)
         quick_compress_widget.compress_finished.connect(self._on_compress_finished)
         quick_compress_widget.extract_finished.connect(self._on_extract_finished)
         self.feature_widgets['quick_compress'] = quick_compress_widget
         self.feature_stack.addWidget(quick_compress_widget)
 
-        # 创建文件名提取界面
+    def _create_file_extractor_widget(self):
+        """创建文件名提取界面"""
+        if 'file_extractor' in self.feature_widgets:
+            return
+        from features import FileNameExtractorWidget
         file_extractor_widget = FileNameExtractorWidget(self.lang, self.config)
         file_extractor_widget.export_finished.connect(self._on_extractor_finished)
         file_extractor_widget.warning_requested.connect(self._on_extractor_warning)
         self.feature_widgets['file_extractor'] = file_extractor_widget
         self.feature_stack.addWidget(file_extractor_widget)
 
-        # 创建图片处理界面
+    def _create_image_processor_widget(self):
+        """创建图片处理界面"""
+        if 'image_processor' in self.feature_widgets:
+            return
+        from features import ImageProcessorWidget
         image_processor_widget = ImageProcessorWidget(self.lang, self.config)
         image_processor_widget.process_finished.connect(self._on_image_finished)
         image_processor_widget.warning_requested.connect(self._on_image_warning)
         self.feature_widgets['image_processor'] = image_processor_widget
         self.feature_stack.addWidget(image_processor_widget)
-
-        parent_layout.addWidget(self.feature_stack)
 
     def _switch_feature(self, feature_id):
         """切换功能界面"""
@@ -286,6 +325,12 @@ class MainWindow(QMainWindow):
                 btn.setStyleSheet(SIDEBAR_BUTTON_ACTIVE_STYLE)
             else:
                 btn.setStyleSheet(SIDEBAR_BUTTON_STYLE)
+
+        # 延迟创建界面（如果尚未创建）
+        if feature_id == 'file_extractor' and feature_id not in self.feature_widgets:
+            self._create_file_extractor_widget()
+        elif feature_id == 'image_processor' and feature_id not in self.feature_widgets:
+            self._create_image_processor_widget()
 
         # 切换界面
         if feature_id in self.feature_widgets:
@@ -324,7 +369,7 @@ class MainWindow(QMainWindow):
         """更新界面文本"""
         # 更新顶栏按钮
         self.lang_btn.setText(t('lang_switch'))
-        self.about_btn.setText(t('about'))
+        # 设置按钮和关于按钮使用图标，不需要更新文本
 
         # 更新功能按钮文本
         features_text = {
@@ -344,6 +389,18 @@ class MainWindow(QMainWindow):
         """显示关于对话框"""
         dialog = AboutDialog(self.lang, self)
         dialog.exec_()
+
+    def _show_settings(self):
+        """显示设置对话框"""
+        dialog = SettingsDialog(self.lang, self.config, self)
+        if dialog.exec_():
+            # 设置保存后，重新加载各模块的配置
+            for widget in self.feature_widgets.values():
+                try:
+                    if hasattr(widget, '_load_config'):
+                        widget._load_config()
+                except Exception:
+                    pass
 
     def _on_compress_finished(self, success, message):
         """压缩完成回调 - 显示顶部通知横幅"""
@@ -449,6 +506,18 @@ def main():
 
     # 加载配置
     config = ConfigManager()
+
+    # 设置语言（用于启动时的对话框）
+    set_language(config.get_language())
+
+    # 检查保存路径是否为空，若为空则弹出配置对话框
+    if not config.get_save_path():
+        startup_dialog = SettingsDialog(config.get_language(), config, None, is_startup=True)
+        if not startup_dialog.exec_():
+            # 用户取消配置，使用默认路径（桌面）
+            desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+            if os.path.exists(desktop_path):
+                config.set_save_path(desktop_path.replace('\\', '/'))
 
     # 创建并显示主窗口
     window = MainWindow(config)

@@ -35,6 +35,19 @@ LANGUAGES = {
         'about_no': '否',
         'about_info': '提示',
 
+        # 设置对话框
+        'settings_title': '设置',
+        'settings_no_path_tip': '未配置保存路径，在下方选择文件保存路径',
+        'settings_save_path_tip': '修改全局保存路径',
+        'settings_save_placeholder': '选择保存路径',
+        'settings_browse': '浏览...',
+        'settings_save': '保存',
+        'settings_close': '关闭',
+        'settings_select_folder': '选择保存文件夹',
+        'settings_warning': '提示',
+        'settings_empty_path': '请选择保存路径',
+        'settings_invalid_path': '路径不存在，请选择有效的文件夹',
+
         # 快捷压缩
         'compress_title': '文件列表',
         'compress_tip': '拖拽文件/文件夹到此处，或点击空白区域添加',
@@ -103,7 +116,7 @@ LANGUAGES = {
         'extractor_save_placeholder': '选择保存路径（留空则保存到源文件夹）',
         'extractor_select_folder': '选择目标文件夹',
         'extractor_select_save': '选择保存位置',
-        'extractor_preview_btn': '预览文件',
+        'extractor_preview_btn': '刷新预览',
         'extractor_export': '导出到Excel',
         'extractor_need_pandas': '需要安装 pandas 和 openpyxl 库才能导出Excel\n请运行: pip install pandas openpyxl',
         'extractor_export_failed': '导出失败：{}',
@@ -184,6 +197,19 @@ LANGUAGES = {
         'about_no': 'No',
         'about_info': 'Info',
 
+        # 设置对话框
+        'settings_title': 'Settings',
+        'settings_no_path_tip': 'Save path not configured. Please select a save path below',
+        'settings_save_path_tip': 'Modify global save path',
+        'settings_save_placeholder': 'Select save path',
+        'settings_browse': 'Browse...',
+        'settings_save': 'Save',
+        'settings_close': 'Close',
+        'settings_select_folder': 'Select Save Folder',
+        'settings_warning': 'Warning',
+        'settings_empty_path': 'Please select a save path',
+        'settings_invalid_path': 'Path does not exist, please select a valid folder',
+
         # 快捷压缩
         'compress_title': 'File List',
         'compress_tip': 'Drag files/folders here, or click empty area to add',
@@ -252,7 +278,7 @@ LANGUAGES = {
         'extractor_save_placeholder': 'Select save path (leave empty to save in source folder)',
         'extractor_select_folder': 'Select Target Folder',
         'extractor_select_save': 'Select Save Location',
-        'extractor_preview_btn': 'Preview Files',
+        'extractor_preview_btn': 'Refresh Preview',
         'extractor_export': 'Export to Excel',
         'extractor_need_pandas': 'pandas and openpyxl required for Excel export\nPlease run: pip install pandas openpyxl',
         'extractor_export_failed': 'Export failed: {}',
