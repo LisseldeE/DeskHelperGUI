@@ -45,6 +45,40 @@ PRESET_SIZES = {
     }
 }
 
+# 证件照排版 - 证件照尺寸配置（单位：像素，300DPI）
+ID_PHOTO_SIZES = {
+    'zh': {
+        '1_inch': ('1寸 (25×35mm)', 295, 413),
+        '2_inch': ('2寸 (35×49mm)', 413, 579),
+        'small_2_inch': ('小2寸 (35×45mm)', 413, 531),
+        'passport': ('护照/签证 (35×45mm)', 413, 531),
+    },
+    'en': {
+        '1_inch': ('1-inch (25×35mm)', 295, 413),
+        '2_inch': ('2-inch (35×49mm)', 413, 579),
+        'small_2_inch': ('Small 2-inch (35×45mm)', 413, 531),
+        'passport': ('Passport/Visa (35×45mm)', 413, 531),
+    }
+}
+
+# 证件照排版 - 相纸尺寸配置（单位：像素，300DPI）
+PAPER_SIZES = {
+    'zh': {
+        '3r': ('3R (89×127mm)', 1051, 1500),
+        '4r': ('4R (102×152mm)', 1205, 1795),
+        '5r': ('5R (127×178mm)', 1500, 2102),
+        '6r': ('6R (152×203mm)', 1795, 2400),
+        'a4': ('A4 (210×297mm)', 2480, 3508),
+    },
+    'en': {
+        '3r': ('3R (89×127mm)', 1051, 1500),
+        '4r': ('4R (102×152mm)', 1205, 1795),
+        '5r': ('5R (127×178mm)', 1500, 2102),
+        '6r': ('6R (152×203mm)', 1795, 2400),
+        'a4': ('A4 (210×297mm)', 2480, 3508),
+    }
+}
+
 
 class ImageProcessorWidget(QWidget):
     """图片处理功能界面"""
@@ -242,6 +276,12 @@ class ImageProcessorWidget(QWidget):
         self.compress_radio.setStyleSheet("QRadioButton { color: #495057; font-size: 13px; spacing: 8px; }")
         self.mode_group.addButton(self.compress_radio, 2)
         process_layout.addWidget(self.compress_radio)
+
+        # 证件照排版选项
+        self.id_photo_radio = QRadioButton(t('image_id_photo_layout'))
+        self.id_photo_radio.setStyleSheet("QRadioButton { color: #495057; font-size: 13px; spacing: 8px; }")
+        self.mode_group.addButton(self.id_photo_radio, 3)
+        process_layout.addWidget(self.id_photo_radio)
 
         self.mode_group.buttonClicked.connect(self._on_mode_changed)
         self.process_group.setLayout(process_layout)
@@ -619,6 +659,120 @@ class ImageProcessorWidget(QWidget):
         self.compress_group.setVisible(False)
         layout.addWidget(self.compress_group)
 
+        # ========== 证件照排版设置区域 ==========
+        self.id_photo_group = QGroupBox("")
+        id_photo_layout = QVBoxLayout()
+        id_photo_layout.setSpacing(6)
+        id_photo_layout.setContentsMargins(8, 8, 8, 8)
+
+        # 证件照尺寸选择
+        photo_size_label = QLabel(t('id_photo_size'))
+        photo_size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(photo_size_label)
+
+        self.id_photo_size_combo = QComboBox()
+        self._update_id_photo_sizes()
+        self.id_photo_size_combo.setFixedHeight(30)
+        self.id_photo_size_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #e9ecef;
+                color: #495057;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                padding: 0 8px;
+                font-size: 13px;
+            }
+            QComboBox:hover {
+                background-color: #dee2e6;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                border: 1px solid #ced4da;
+                selection-background-color: #339af0;
+            }
+        """)
+        self.id_photo_size_combo.currentIndexChanged.connect(self._schedule_preview)
+        id_photo_layout.addWidget(self.id_photo_size_combo)
+
+        # 相纸尺寸选择
+        paper_size_label = QLabel(t('id_photo_paper_size'))
+        paper_size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(paper_size_label)
+
+        self.paper_size_combo = QComboBox()
+        self._update_paper_sizes()
+        self.paper_size_combo.setFixedHeight(30)
+        self.paper_size_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #e9ecef;
+                color: #495057;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                padding: 0 8px;
+                font-size: 13px;
+            }
+            QComboBox:hover {
+                background-color: #dee2e6;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                border: 1px solid #ced4da;
+                selection-background-color: #339af0;
+            }
+        """)
+        self.paper_size_combo.currentIndexChanged.connect(self._schedule_preview)
+        id_photo_layout.addWidget(self.paper_size_combo)
+
+        # 排版方式选择
+        layout_mode_label = QLabel(t('id_photo_layout_mode'))
+        layout_mode_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(layout_mode_label)
+
+        layout_mode_container = QHBoxLayout()
+        self.layout_horizontal_radio = QRadioButton(t('id_photo_layout_horizontal'))
+        self.layout_horizontal_radio.setChecked(True)
+        self.layout_horizontal_radio.setStyleSheet("QRadioButton { color: #495057; font-size: 13px; spacing: 6px; }")
+        self.layout_horizontal_radio.toggled.connect(self._schedule_preview)
+        layout_mode_container.addWidget(self.layout_horizontal_radio)
+
+        self.layout_vertical_radio = QRadioButton(t('id_photo_layout_vertical'))
+        self.layout_vertical_radio.setStyleSheet("QRadioButton { color: #495057; font-size: 13px; spacing: 6px; }")
+        self.layout_vertical_radio.toggled.connect(self._schedule_preview)
+        layout_mode_container.addWidget(self.layout_vertical_radio)
+
+        self.layout_mode_group = QButtonGroup(self)
+        self.layout_mode_group.addButton(self.layout_horizontal_radio, 0)
+        self.layout_mode_group.addButton(self.layout_vertical_radio, 1)
+        id_photo_layout.addLayout(layout_mode_container)
+
+        # 可排版数量提示
+        self.id_photo_count_label = QLabel("")
+        self.id_photo_count_label.setStyleSheet("color: #339af0; font-size: 12px; font-weight: 600;")
+        self.id_photo_count_label.setAlignment(Qt.AlignCenter)
+        id_photo_layout.addWidget(self.id_photo_count_label)
+
+        self.id_photo_group.setLayout(id_photo_layout)
+        self.id_photo_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: normal;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                margin-top: 0px;
+                padding-top: 0px;
+                background-color: white;
+            }
+        """)
+        self.id_photo_group.setVisible(False)
+        layout.addWidget(self.id_photo_group)
+
         layout.addStretch()
         panel.setLayout(layout)
         return panel
@@ -776,6 +930,20 @@ class ImageProcessorWidget(QWidget):
         for key, (name, w, h) in presets.items():
             self.preset_combo.addItem(name, (w, h))
 
+    def _update_id_photo_sizes(self):
+        """更新证件照尺寸列表"""
+        self.id_photo_size_combo.clear()
+        sizes = ID_PHOTO_SIZES.get(self.lang, ID_PHOTO_SIZES['zh'])
+        for key, (name, w, h) in sizes.items():
+            self.id_photo_size_combo.addItem(name, (w, h))
+
+    def _update_paper_sizes(self):
+        """更新相纸尺寸列表"""
+        self.paper_size_combo.clear()
+        sizes = PAPER_SIZES.get(self.lang, PAPER_SIZES['zh'])
+        for key, (name, w, h) in sizes.items():
+            self.paper_size_combo.addItem(name, (w, h))
+
     def _on_mode_changed(self, button):
         """处理模式改变 - 切换显示对应设置区域"""
         mode_id = self.mode_group.id(button)
@@ -783,6 +951,11 @@ class ImageProcessorWidget(QWidget):
         self.rotate_group.setVisible(mode_id == 0)
         self.crop_group.setVisible(mode_id == 1)
         self.compress_group.setVisible(mode_id == 2)
+        self.id_photo_group.setVisible(mode_id == 3)
+        
+        # 证件照排版模式下，触发预览更新
+        if mode_id == 3 and self.original_image is not None:
+            self._schedule_preview()
 
     def _on_angle_changed(self, index):
         """角度选择改变"""
@@ -978,17 +1151,22 @@ class ImageProcessorWidget(QWidget):
             # 更新预估大小提示
             self._update_slider_range()
             
-            # 显示预览
-            try:
-                self._display_preview_from_file(file_path)
-            except Exception as preview_error:
-                print(f"预览显示失败: {preview_error}")
-            
         except Exception as e:
             QMessageBox.critical(self, t('msg_error'), t('image_load_failed', str(e)))
         finally:
             # 加载完成，清除标志
             self._loading_image = False
+        
+        # 显示预览（根据当前模式，在清除标志后执行）
+        try:
+            if self.id_photo_radio.isChecked():
+                # 证件照排版模式下，显示排版后的预览
+                self._auto_preview()
+            else:
+                # 其他模式下，显示原始图片预览
+                self._display_preview_from_file(file_path)
+        except Exception as preview_error:
+            print(f"预览显示失败: {preview_error}")
     
     def _display_preview_from_file(self, file_path):
         """从文件直接显示预览图片（避免转换）"""
@@ -1062,14 +1240,20 @@ class ImageProcessorWidget(QWidget):
             return
         
         try:
-            # 先保存到临时文件，再加载（最安全的方法）
-            temp_path = os.path.join(os.path.dirname(self.original_file_path), 
-                                     f"_temp_preview_{os.path.basename(self.original_file_path)}")
+            import tempfile
+            
+            # 使用系统临时目录创建临时文件（更安全）
+            temp_dir = tempfile.gettempdir()
+            temp_path = os.path.join(temp_dir, f"_temp_preview_{id(self)}.jpg")
             
             # 根据模式选择保存格式
             if image.mode == 'RGBA':
+                temp_path = os.path.join(temp_dir, f"_temp_preview_{id(self)}.png")
                 image.save(temp_path, format='PNG')
             else:
+                # 转换为RGB模式（JPEG不支持RGBA）
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
                 image.save(temp_path, format='JPEG', quality=95)
             
             # 从临时文件加载
@@ -1131,6 +1315,10 @@ class ImageProcessorWidget(QWidget):
         
         result = image.copy()
         compressed_data = None
+        
+        # 证件照排版模式（单独处理）
+        if self.id_photo_radio.isChecked():
+            return self._create_id_photo_layout(image), None
         
         # 旋转
         if self.rotate_enable_check.isChecked():
@@ -1194,6 +1382,82 @@ class ImageProcessorWidget(QWidget):
             print(f"[DEBUG] Compression NOT enabled")
         
         return result, compressed_data
+
+    def _create_id_photo_layout(self, image):
+        """创建证件照排版图片"""
+        from PIL import Image
+        
+        # 获取证件照尺寸
+        photo_data = self.id_photo_size_combo.currentData()
+        if not photo_data:
+            photo_w, photo_h = 295, 413  # 默认1寸
+        else:
+            photo_w, photo_h = photo_data
+        
+        # 获取相纸尺寸
+        paper_data = self.paper_size_combo.currentData()
+        if not paper_data:
+            paper_w, paper_h = 1205, 1795  # 默认4R
+        else:
+            paper_w, paper_h = paper_data
+        
+        # 获取排版方式
+        is_horizontal = self.layout_horizontal_radio.isChecked()
+        
+        # 计算可排版数量
+        margin = 20  # 边距（像素）
+        spacing = 10  # 间距（像素）
+        
+        if is_horizontal:
+            # 横向排布：证件照横向排列
+            cols = (paper_w - 2 * margin + spacing) // (photo_w + spacing)
+            rows = (paper_h - 2 * margin + spacing) // (photo_h + spacing)
+        else:
+            # 纵向排布：证件照纵向排列（旋转90度放置）
+            cols = (paper_w - 2 * margin + spacing) // (photo_h + spacing)
+            rows = (paper_h - 2 * margin + spacing) // (photo_w + spacing)
+        
+        cols = max(1, cols)
+        rows = max(1, rows)
+        count = cols * rows
+        
+        # 更新可排版数量提示
+        self.id_photo_count_label.setText(t('id_photo_count', count))
+        
+        # 裁剪证件照
+        cropped_photo = self._resize_image(image, photo_w, photo_h)
+        
+        # 如果是纵向排布，需要旋转证件照
+        if not is_horizontal:
+            cropped_photo = cropped_photo.rotate(-90, expand=True)
+        
+        # 创建相纸背景（白色）
+        paper = Image.new('RGB', (paper_w, paper_h), (255, 255, 255))
+        
+        # 计算起始位置（居中排版）
+        if is_horizontal:
+            total_width = cols * photo_w + (cols - 1) * spacing
+            total_height = rows * photo_h + (rows - 1) * spacing
+        else:
+            total_width = cols * photo_h + (cols - 1) * spacing
+            total_height = rows * photo_w + (rows - 1) * spacing
+        
+        start_x = (paper_w - total_width) // 2
+        start_y = (paper_h - total_height) // 2
+        
+        # 排版证件照
+        for row in range(rows):
+            for col in range(cols):
+                if is_horizontal:
+                    x = start_x + col * (photo_w + spacing)
+                    y = start_y + row * (photo_h + spacing)
+                else:
+                    x = start_x + col * (photo_h + spacing)
+                    y = start_y + row * (photo_w + spacing)
+                
+                paper.paste(cropped_photo, (x, y))
+        
+        return paper
 
     def _resize_image(self, image, target_w, target_h):
         """调整图片尺寸（保持比例居中裁剪）"""
@@ -1307,6 +1571,10 @@ class ImageProcessorWidget(QWidget):
     def _reset_image(self):
         """重置为原始图片"""
         if self.original_image:
+            # 切换至旋转图片模式
+            self.rotate_radio.setChecked(True)
+            self._on_mode_changed(self.rotate_radio)
+            # 显示原始图片预览
             self._display_preview(self.original_image)
             # 重置裁剪尺寸为原图尺寸
             w, h = self.original_image.size
@@ -1358,6 +1626,12 @@ class ImageProcessorWidget(QWidget):
         self.size_value_label.setText('100%')
         self.estimate_label.setText('')
         
+        # 重置证件照排版设置
+        self.id_photo_size_combo.setCurrentIndex(0)
+        self.paper_size_combo.setCurrentIndex(0)
+        self.layout_horizontal_radio.setChecked(True)
+        self.id_photo_count_label.setText('')
+        
         # 不清除保存路径输入框，保留用户设置的路径
 
     def _process_and_save(self):
@@ -1379,12 +1653,14 @@ class ImageProcessorWidget(QWidget):
             self.warning_requested.emit(t('image_no_image'))
             return
 
-        # 检查是否有启用的功能
-        if not (self.rotate_enable_check.isChecked() or 
-                self.crop_enable_check.isChecked() or 
-                self.compress_enable_check.isChecked()):
-            self.warning_requested.emit(t('image_no_effect'))
-            return
+        # 证件照排版模式不需要检查启用功能
+        if not self.id_photo_radio.isChecked():
+            # 检查是否有启用的功能
+            if not (self.rotate_enable_check.isChecked() or 
+                    self.crop_enable_check.isChecked() or 
+                    self.compress_enable_check.isChecked()):
+                self.warning_requested.emit(t('image_no_effect'))
+                return
 
         # 使用全局保存路径
         save_path = self.config.get_save_path() if self.config else ""
@@ -1413,9 +1689,16 @@ class ImageProcessorWidget(QWidget):
                 # 生成输出文件名
                 if self.original_file_path:
                     base_name = os.path.splitext(os.path.basename(self.original_file_path))[0]
-                    default_name = f"{base_name}_processed{self.original_file_ext}"
+                    if self.id_photo_radio.isChecked():
+                        # 证件照排版使用 JPEG 格式
+                        default_name = f"{base_name}_id_photo_layout.jpg"
+                    else:
+                        default_name = f"{base_name}_processed{self.original_file_ext}"
                 else:
-                    default_name = f"processed_image{self.original_file_ext or '.png'}"
+                    if self.id_photo_radio.isChecked():
+                        default_name = f"id_photo_layout.jpg"
+                    else:
+                        default_name = f"processed_image{self.original_file_ext or '.png'}"
                 
                 # 使用全局保存路径（目录）+ 文件名
                 final_save_path = os.path.join(save_path, default_name)
@@ -1423,8 +1706,18 @@ class ImageProcessorWidget(QWidget):
                 print(f"[DEBUG] Saving to: {final_save_path}")
                 print(f"[DEBUG] Original format: {self.original_file_ext}")
                 
+                # 证件照排版模式 - 保存为高质量 JPEG
+                if self.id_photo_radio.isChecked():
+                    if processed.mode == 'RGBA':
+                        background = Image.new('RGB', processed.size, (255, 255, 255))
+                        background.paste(processed, mask=processed.split()[3])
+                        processed = background
+                    elif processed.mode != 'RGB':
+                        processed = processed.convert('RGB')
+                    processed.save(final_save_path, format='JPEG', quality=95)
+                    print(f"[DEBUG] Saved ID photo layout JPEG to {final_save_path}")
                 # 如果有压缩数据，直接写入（仅适用于JPEG）
-                if compressed_data is not None and self.original_file_ext in ['.jpg', '.jpeg']:
+                elif compressed_data is not None and self.original_file_ext in ['.jpg', '.jpeg']:
                     with open(final_save_path, 'wb') as f:
                         f.write(compressed_data)
                     print(f"[DEBUG] Saved compressed JPEG to {final_save_path}, size = {len(compressed_data)} bytes ({len(compressed_data)/1024:.1f} KB)")
@@ -1499,6 +1792,7 @@ class ImageProcessorWidget(QWidget):
         self.rotate_radio.setText(t('image_rotate'))
         self.crop_radio.setText(t('image_crop'))
         self.compress_radio.setText(t('image_compress'))
+        self.id_photo_radio.setText(t('image_id_photo_layout'))
         
         self.rotate_enable_check.setText(t('image_enable'))
         self.angle_combo.setItemText(3, t('image_angle_custom'))
@@ -1510,6 +1804,12 @@ class ImageProcessorWidget(QWidget):
         
         self.compress_enable_check.setText(t('image_enable'))
         self.estimate_label.setText("")
+        
+        # 更新证件照排版相关文本
+        self._update_id_photo_sizes()
+        self._update_paper_sizes()
+        self.layout_horizontal_radio.setText(t('id_photo_layout_horizontal'))
+        self.layout_vertical_radio.setText(t('id_photo_layout_vertical'))
         
         self.reset_btn.setText(t('image_reset'))
         self.save_btn.setText(t('image_save'))

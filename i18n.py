@@ -18,7 +18,7 @@ LANGUAGES = {
         'feature_file_extractor': '文件名提取',
 
         # 关于对话框
-        'about_version': '版本：R2',
+        'about_version': '版本：R3',
         'about_desc': '桌面办公小助手，提供多种快捷实用功能，让日常办公更高效',
         'about_author': '作者：Lisselde_E',
         'about_check_update': '检查更新',
@@ -170,6 +170,28 @@ LANGUAGES = {
         'image_done': '图片处理完成！\n文件已保存至：{}',
         'image_failed': '图片处理失败：{}',
 
+        # 证件照排版
+        'image_id_photo_layout': '证件照排版',
+        'id_photo_size': '证件照尺寸：',
+        'id_photo_1inch': '1寸 (25×35mm)',
+        'id_photo_2inch': '2寸 (35×49mm)',
+        'id_photo_small_2inch': '小2寸 (35×45mm)',
+        'id_photo_passport': '护照/签证 (35×45mm)',
+        'id_photo_paper_size': '相纸尺寸：',
+        'id_photo_paper_3r': '3R (89×127mm)',
+        'id_photo_paper_4r': '4R (102×152mm)',
+        'id_photo_paper_5r': '5R (127×178mm)',
+        'id_photo_paper_6r': '6R (152×203mm)',
+        'id_photo_paper_a4': 'A4 (210×297mm)',
+        'id_photo_layout_mode': '排版方式：',
+        'id_photo_layout_horizontal': '横向排布',
+        'id_photo_layout_vertical': '纵向排布',
+        'id_photo_count': '可排版：{}张',
+        'id_photo_preview_tip': '预览区域显示排版效果',
+        'id_photo_no_image': '请先导入图片',
+        'id_photo_done': '证件照排版完成！\n文件已保存至：{}',
+        'id_photo_failed': '证件照排版失败：{}',
+
         # 格式转换
         'feature_format_converter': '格式转换',
         'converter_import': '文件导入',
@@ -253,7 +275,7 @@ LANGUAGES = {
         'feature_file_extractor': 'File Name Extractor',
 
         # 关于对话框
-        'about_version': 'Version: R2',
+        'about_version': 'Version: R3',
         'about_desc': 'A compact desktop toolset offering quick utilities for more efficient daily office work',
         'about_author': 'Author: Lisselde_E',
         'about_check_update': 'Check Update',
@@ -405,7 +427,29 @@ LANGUAGES = {
         'image_done': 'Image processed!\nFile saved to: {}',
         'image_failed': 'Image processing failed: {}',
 
-        # 格式转换
+        # ID Photo Layout
+        'image_id_photo_layout': 'ID Photo Layout',
+        'id_photo_size': 'Photo Size:',
+        'id_photo_1inch': '1-inch (25×35mm)',
+        'id_photo_2inch': '2-inch (35×49mm)',
+        'id_photo_small_2inch': 'Small 2-inch (35×45mm)',
+        'id_photo_passport': 'Passport/Visa (35×45mm)',
+        'id_photo_paper_size': 'Paper Size:',
+        'id_photo_paper_3r': '3R (89×127mm)',
+        'id_photo_paper_4r': '4R (102×152mm)',
+        'id_photo_paper_5r': '5R (127×178mm)',
+        'id_photo_paper_6r': '6R (152×203mm)',
+        'id_photo_paper_a4': 'A4 (210×297mm)',
+        'id_photo_layout_mode': 'Layout Mode:',
+        'id_photo_layout_horizontal': 'Horizontal',
+        'id_photo_layout_vertical': 'Vertical',
+        'id_photo_count': 'Can arrange: {} photos',
+        'id_photo_preview_tip': 'Preview area shows layout effect',
+        'id_photo_no_image': 'Please import an image first',
+        'id_photo_done': 'ID photo layout completed!\nFile saved to: {}',
+        'id_photo_failed': 'ID photo layout failed: {}',
+
+        # Format Converter格式转换
         'feature_format_converter': 'Format Converter',
         'converter_import': 'File Import',
         'converter_single_file': 'Single File',
