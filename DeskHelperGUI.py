@@ -256,6 +256,7 @@ class MainWindow(QMainWindow):
             ('quick_compress', t('feature_quick_compress')),
             ('image_processor', t('feature_image_processor')),
             ('format_converter', t('feature_format_converter')),
+            ('pdf_tool', t('feature_pdf_tool')),
             ('file_extractor', t('feature_file_extractor')),
         ]
 
@@ -327,6 +328,17 @@ class MainWindow(QMainWindow):
         self.feature_widgets['format_converter'] = format_converter_widget
         self.feature_stack.addWidget(format_converter_widget)
 
+    def _create_pdf_tool_widget(self):
+        """创建PDF工具界面"""
+        if 'pdf_tool' in self.feature_widgets:
+            return
+        from features import PDFToolWidget
+        pdf_tool_widget = PDFToolWidget(self.lang, self.config)
+        pdf_tool_widget.operation_finished.connect(self._on_pdf_finished)
+        pdf_tool_widget.warning_requested.connect(self._on_pdf_warning)
+        self.feature_widgets['pdf_tool'] = pdf_tool_widget
+        self.feature_stack.addWidget(pdf_tool_widget)
+
     def _switch_feature(self, feature_id):
         """切换功能界面"""
         if feature_id == self.current_feature:
@@ -346,6 +358,8 @@ class MainWindow(QMainWindow):
             self._create_image_processor_widget()
         elif feature_id == 'format_converter' and feature_id not in self.feature_widgets:
             self._create_format_converter_widget()
+        elif feature_id == 'pdf_tool' and feature_id not in self.feature_widgets:
+            self._create_pdf_tool_widget()
 
         # 切换界面
         if feature_id in self.feature_widgets:
@@ -392,6 +406,7 @@ class MainWindow(QMainWindow):
             'file_extractor': t('feature_file_extractor'),
             'image_processor': t('feature_image_processor'),
             'format_converter': t('feature_format_converter'),
+            'pdf_tool': t('feature_pdf_tool'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -500,6 +515,26 @@ class MainWindow(QMainWindow):
 
     def _on_converter_warning(self, message):
         """格式转换警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=3000
+        )
+
+    def _on_pdf_finished(self, success, message):
+        """PDF工具完成回调 - 显示顶部通知横幅"""
+        if success:
+            self.notification_banner.show_message(
+                message,
+                type='success', duration=4000
+            )
+        else:
+            self.notification_banner.show_message(
+                message,
+                type='error', duration=5000
+            )
+
+    def _on_pdf_warning(self, message):
+        """PDF工具警告回调 - 显示顶部通知横幅"""
         self.notification_banner.show_message(
             message,
             type='warning', duration=3000

@@ -138,24 +138,6 @@ class ImageProcessorWidget(QWidget):
         # 按钮区域
         self._create_buttons(main_layout)
 
-        # 进度条
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #e9ecef;
-                border: none;
-                border-radius: 4px;
-                height: 8px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #339af0;
-                border-radius: 4px;
-            }
-        """)
-        self.progress_bar.setVisible(False)
-        main_layout.addWidget(self.progress_bar)
-
         self.setLayout(main_layout)
 
     def _create_import_area(self, parent_layout):
@@ -702,11 +684,36 @@ class ImageProcessorWidget(QWidget):
         return panel
 
     def _create_buttons(self, parent_layout):
-        """创建按钮区域"""
+        """创建按钮区域（进度条嵌入按钮行右侧）"""
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(12)
 
-        btn_layout.addStretch()
+        # 进度条容器（固定高度占位，防止进度条显隐时布局跳动）
+        self.progress_container = QWidget()
+        self.progress_container.setFixedHeight(14)
+        container_layout = QVBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        self.progress_container.setLayout(container_layout)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: #e9ecef;
+                border: none;
+                border-radius: 4px;
+                height: 14px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background-color: #339af0;
+                border-radius: 4px;
+            }
+        """)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+        container_layout.addWidget(self.progress_bar)
+        btn_layout.addWidget(self.progress_container, 1)
 
         # 重置按钮
         self.reset_btn = AnimatedButton(t('image_reset'))
@@ -734,7 +741,7 @@ class ImageProcessorWidget(QWidget):
         self.save_btn.setFixedSize(130, 36)
         self.save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #339af0;
+                background-color: #51cf66;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -742,10 +749,10 @@ class ImageProcessorWidget(QWidget):
                 font-weight: 500;
             }
             QPushButton:hover {
-                background-color: #228be6;
+                background-color: #40c057;
             }
             QPushButton:pressed {
-                background-color: #1c7ed6;
+                background-color: #37b24d;
             }
         """)
         self.save_btn.clicked.connect(self._process_and_save)
@@ -1385,10 +1392,11 @@ class ImageProcessorWidget(QWidget):
             self.warning_requested.emit(t('msg_select_path'))
             return
 
-        # 显示进度条
+        # 显示进度条，禁用按钮
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.save_btn.setEnabled(False)
+        self.reset_btn.setEnabled(False)
         self.is_processing = True
         
         def do_process():
@@ -1463,8 +1471,10 @@ class ImageProcessorWidget(QWidget):
 
     def on_process_finished(self, success, message):
         """处理完成回调"""
+        self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
         self.save_btn.setEnabled(True)
+        self.reset_btn.setEnabled(True)
         self.is_processing = False
         
         if success:

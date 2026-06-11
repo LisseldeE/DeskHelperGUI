@@ -437,40 +437,44 @@ class QuickCompressWidget(QWidget):
         layout.setStretchFactor(self.file_group, 1)
         layout.setStretchFactor(self.settings_group, 0)
 
-        # 进度条
+        # 操作按钮区域（进度条嵌入同行左侧，按钮靠右）
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
+
+        # 进度条容器（固定高度占位，防止进度条显隐时布局跳动）
+        self.progress_container = QWidget()
+        self.progress_container.setFixedHeight(24)
+        container_layout = QVBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        self.progress_container.setLayout(container_layout)
+
         self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setFixedHeight(24)
         self.progress_bar.setStyleSheet("""
             QProgressBar {
+                background-color: #f1f3f5;
                 border: 1px solid #dee2e6;
                 border-radius: 6px;
                 text-align: center;
-                background-color: #f1f3f5;
                 font-size: 12px;
                 color: #495057;
                 font-weight: 600;
+                height: 24px;
             }
             QProgressBar::chunk {
                 background-color: qlineargradient(
                     x1: 0, y1: 0, x2: 1, y2: 0,
                     stop: 0 #339af0, stop: 1 #4dabf7
                 );
-                border-radius: 5px;
+                border-radius: 4px;
             }
         """)
-        # 进度条外包装（加上下边距）
-        progress_wrapper = QHBoxLayout()
-        progress_wrapper.setContentsMargins(0, 4, 0, 4)
-        progress_wrapper.addWidget(self.progress_bar)
-        layout.addLayout(progress_wrapper)
+        self.progress_bar.setVisible(False)
+        container_layout.addWidget(self.progress_bar)
+        btn_layout.addWidget(self.progress_container, 1)
 
-        # 操作按钮区域（压缩 + 解压）
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-
-        # 压缩按钮
         self.compress_btn = AnimatedButton(t('compress_start'))
         self.compress_btn.setMinimumWidth(150)
         self.compress_btn.setMinimumHeight(40)
@@ -499,7 +503,6 @@ class QuickCompressWidget(QWidget):
         self.compress_btn.clicked.connect(self._start_compress)
         btn_layout.addWidget(self.compress_btn)
 
-        # 解压按钮
         self.extract_btn = AnimatedButton(t('extract_start'))
         self.extract_btn.setMinimumWidth(150)
         self.extract_btn.setMinimumHeight(40)
@@ -529,12 +532,11 @@ class QuickCompressWidget(QWidget):
         self.extract_btn.clicked.connect(self._start_extract)
         btn_layout.addWidget(self.extract_btn)
 
-        btn_layout.addStretch()
         layout.addLayout(btn_layout)
 
         layout.addStretch()
         self.setLayout(layout)
-        
+
         # 防止递归加载配置
         self._loading_config = False
 
@@ -1236,7 +1238,7 @@ class QuickCompressWidget(QWidget):
         self.is_compressing = False
         self.compress_btn.setEnabled(True)
         self.clear_btn.setEnabled(True)
-        self.progress_bar.setVisible(False)
+        self._fade_widget(self.progress_bar, False, duration=200)
         
         # 更新解压按钮状态
         self._update_compress_btn_state()

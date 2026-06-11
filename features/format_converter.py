@@ -89,24 +89,6 @@ class FormatConverterWidget(QWidget):
         # 按钮区域
         self._create_buttons(main_layout)
 
-        # 进度条
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #e9ecef;
-                border: none;
-                border-radius: 4px;
-                height: 8px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #339af0;
-                border-radius: 4px;
-            }
-        """)
-        self.progress_bar.setVisible(False)
-        main_layout.addWidget(self.progress_bar)
-
         self.setLayout(main_layout)
 
     def _create_import_area(self, parent_layout):
@@ -332,10 +314,34 @@ class FormatConverterWidget(QWidget):
         layout.setSpacing(6)
         layout.setContentsMargins(8, 8, 8, 8)
 
-        # 文件列表标题
+        # 文件列表标题行（清空按钮靠右侧边框）
+        list_header = QHBoxLayout()
         list_label = QLabel(t('converter_file_list'))
         list_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold;")
-        layout.addWidget(list_label)
+        list_header.addWidget(list_label)
+        
+        list_header.addStretch()
+        
+        # 清空按钮在标题行最右侧
+        self.list_clear_btn = AnimatedButton(t('converter_clear'))
+        self.list_clear_btn.setFixedHeight(26)
+        self.list_clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e9ecef;
+                color: #495057;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 0 10px;
+            }
+            QPushButton:hover {
+                background-color: #dee2e6;
+            }
+        """)
+        self.list_clear_btn.clicked.connect(self._clear_list)
+        list_header.addWidget(self.list_clear_btn)
+        
+        layout.addLayout(list_header)
 
         # 文件列表
         self.file_list_widget = QListWidget()
@@ -379,30 +385,36 @@ class FormatConverterWidget(QWidget):
         return panel
 
     def _create_buttons(self, parent_layout):
-        """创建操作按钮"""
+        """创建操作按钮和进度条"""
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
 
-        # 清空列表按钮
-        self.clear_btn = AnimatedButton(t('converter_clear'))
-        self.clear_btn.setFixedHeight(34)
-        self.clear_btn.setStyleSheet("""
-            QPushButton {
+        # 进度条容器（固定高度占位，防止进度条显隐时布局跳动）
+        self.progress_container = QWidget()
+        self.progress_container.setFixedHeight(14)
+        container_layout = QVBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        self.progress_container.setLayout(container_layout)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
                 background-color: #e9ecef;
-                color: #495057;
-                border: 1px solid #ced4da;
-                border-radius: 6px;
-                font-size: 13px;
-                padding: 0 15px;
+                border: none;
+                border-radius: 4px;
+                height: 14px;
+                text-align: center;
             }
-            QPushButton:hover {
-                background-color: #dee2e6;
+            QProgressBar::chunk {
+                background-color: #339af0;
+                border-radius: 4px;
             }
         """)
-        self.clear_btn.clicked.connect(self._clear_list)
-        btn_layout.addWidget(self.clear_btn)
-
-        btn_layout.addStretch()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+        container_layout.addWidget(self.progress_bar)
+        btn_layout.addWidget(self.progress_container, 1)
 
         # 开始转换按钮
         self.convert_btn = AnimatedButton(t('converter_start'))
@@ -613,10 +625,10 @@ class FormatConverterWidget(QWidget):
             else:
                 ico_size = 64  # 默认64x64
 
-        # 禁用按钮，显示进度条
+        # 禁用按钮，显示进度条（list_clear_btn已在文件列表标题区）
         self.convert_btn.setEnabled(False)
         self.browse_btn.setEnabled(False)
-        self.clear_btn.setEnabled(False)
+        self.list_clear_btn.setEnabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, len(self.file_list))
         self.progress_bar.setValue(0)
@@ -798,10 +810,11 @@ class FormatConverterWidget(QWidget):
 
     def on_convert_finished(self, success, message):
         """转换完成回调"""
+        self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
         self.convert_btn.setEnabled(True)
         self.browse_btn.setEnabled(True)
-        self.clear_btn.setEnabled(True)
+        self.list_clear_btn.setEnabled(True)
         self.is_converting = False
         
         # 转换成功后自动清空列表
@@ -856,8 +869,8 @@ class FormatConverterWidget(QWidget):
         
         self.file_count_label.setText(t('converter_file_count', len(self.file_list)))
         
-        self.clear_btn.setText(t('converter_clear'))
+        self.list_clear_btn.setText(t('converter_clear'))
         self.convert_btn.setText(t('converter_start'))
-        
+ 
         # 重新加载配置（更新输出路径显示）
         self._load_config()

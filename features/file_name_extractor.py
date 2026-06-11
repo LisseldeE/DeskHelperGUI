@@ -118,8 +118,40 @@ class FileNameExtractorWidget(QWidget):
         # 预览区域
         self.preview_group = QGroupBox(t('extractor_preview'))
         preview_main_layout = QVBoxLayout()
-        preview_main_layout.setSpacing(8)
+        preview_main_layout.setSpacing(6)
         preview_main_layout.setContentsMargins(10, 15, 10, 15)
+
+        # 预览标题行（刷新按钮靠右侧边框）
+        preview_header = QHBoxLayout()
+        preview_header.setContentsMargins(0, 0, 0, 0)
+        
+        # 空标签占位（标题已由QGroupBox显示，这里仅放刷新按钮）
+        preview_header.addStretch()
+        
+        # 刷新预览按钮
+        self.preview_btn = AnimatedButton(t('extractor_preview_btn'))
+        self.preview_btn.setFixedHeight(28)
+        self.preview_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #51cf66;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+                padding: 0 12px;
+            }
+            QPushButton:hover {
+                background-color: #40c057;
+            }
+            QPushButton:pressed {
+                background-color: #37b24d;
+            }
+        """)
+        self.preview_btn.clicked.connect(self._preview_files)
+        preview_header.addWidget(self.preview_btn)
+        
+        preview_main_layout.addLayout(preview_header)
 
         # 文件列表
         self.file_listbox = QListWidget()
@@ -192,19 +224,46 @@ class FileNameExtractorWidget(QWidget):
 
         # 按钮区域
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(15)
+        btn_layout.setSpacing(10)
 
-        # 预览按钮
-        self.preview_btn = AnimatedButton(t('extractor_preview_btn'))
-        self.preview_btn.setFixedSize(120, 40)
-        self.preview_btn.setStyleSheet("""
+        # 进度条容器（填充导出按钮左侧空白，防止进度条显隐时布局跳动）
+        self.progress_container = QWidget()
+        self.progress_container.setFixedHeight(14)
+        container_layout = QVBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        self.progress_container.setLayout(container_layout)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: #e9ecef;
+                border: none;
+                border-radius: 4px;
+                height: 14px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background-color: #339af0;
+                border-radius: 4px;
+            }
+        """)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+        container_layout.addWidget(self.progress_bar)
+        btn_layout.addWidget(self.progress_container, 1)
+
+        # 导出按钮
+        self.export_btn = AnimatedButton(t('extractor_export'))
+        self.export_btn.setFixedSize(130, 34)
+        self.export_btn.setStyleSheet("""
             QPushButton {
                 background-color: #51cf66;
                 color: white;
                 border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 500;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #40c057;
@@ -213,52 +272,10 @@ class FileNameExtractorWidget(QWidget):
                 background-color: #37b24d;
             }
         """)
-        self.preview_btn.clicked.connect(self._preview_files)
-        btn_layout.addWidget(self.preview_btn)
-
-        btn_layout.addStretch()
-
-        # 导出按钮
-        self.export_btn = AnimatedButton(t('extractor_export'))
-        self.export_btn.setFixedSize(140, 40)
-        self.export_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #339af0;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #228be6;
-            }
-            QPushButton:pressed {
-                background-color: #1c7ed6;
-            }
-        """)
         self.export_btn.clicked.connect(self._export_to_excel)
         btn_layout.addWidget(self.export_btn)
 
         layout.addLayout(btn_layout)
-
-        # 进度条
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #e9ecef;
-                border: none;
-                border-radius: 4px;
-                height: 8px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #339af0;
-                border-radius: 4px;
-            }
-        """)
-        self.progress_bar.setVisible(False)
-        layout.addWidget(self.progress_bar)
 
         self.setLayout(layout)
         
@@ -435,6 +452,7 @@ class FileNameExtractorWidget(QWidget):
 
     def on_export_finished(self, success, message):
         """导出完成回调"""
+        self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
         self.export_btn.setEnabled(True)
         self.preview_btn.setEnabled(True)

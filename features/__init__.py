@@ -7,5 +7,6 @@ from .quick_compress import QuickCompressWidget
 from .file_name_extractor import FileNameExtractorWidget
 from .image_processor import ImageProcessorWidget
 from .format_converter import FormatConverterWidget
+from .pdf_tool import PDFToolWidget
 
-__all__ = ['QuickCompressWidget', 'FileNameExtractorWidget', 'ImageProcessorWidget', 'FormatConverterWidget']
+__all__ = ['QuickCompressWidget', 'FileNameExtractorWidget', 'ImageProcessorWidget', 'FormatConverterWidget', 'PDFToolWidget']
