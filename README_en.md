@@ -29,6 +29,7 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - **Rotate Image**: Choose rotation angle
 - **Crop Image**: Provide preset size options (e.g., ID photo sizes)
 - **Compress Image**: Provide compression size adjustment slider with real-time preview of compressed size
+- **ID Photo Layout**: Support 1-inch, 2-inch and other ID photo size presets, choose paper size and layout direction, real-time preview of layout effect
 
 ### Format Conversion
 - Import single file or batch process folders
@@ -36,6 +37,12 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - **PDF to Image**: Convert PDF to JPG or PNG format
 - **ICO Format**: Support 16×16 to 256×256 multiple size options, auto-adjust ratio
 - Use global save path, support drag-and-drop import
+
+### PDF Processing
+- Import PDF files
+- **PDF Split**: Split PDF into single-page or multi-page files
+- **PDF Merge**: Merge multiple PDF files into one
+- **PDF Compress**: Compress PDF file size to reduce storage space
 
 ## Update Log
 
@@ -76,6 +83,23 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - Added PDF to JPG, PNG format options
 - Optimized interface notification banner style
 - Optimized output path display in other modules
+
+### 2026.6.11 R3
+**#01**
+- Added feature - PDF Processing
+- Added PDF file split, merge and compress
+- Optimized progress bar display rendering logic for all modules
+- Optimized and unified interface layout logic for all modules
+
+**#02**
+- Added feature - Image Processing - ID Photo Layout
+- Added multiple layout presets and paper size presets
+- Layout can freely adjust photo arrangement
+- In ID photo layout mode, other processing methods are temporarily disabled
+
+**#03**
+- Added default user desktop settings path
+- Added domestic download source, intelligent switching to optimize download update experience
 
 ## Technology Stack
 

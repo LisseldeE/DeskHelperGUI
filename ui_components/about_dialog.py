@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 DeskHelperGUI 关于对话框
 包含项目信息和检查更新功能
@@ -27,7 +27,16 @@ APP_NAME = "DeskHelperGUI"
 APP_VERSION = "R3"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
-APP_REPO = "LisseldeE/DeskHelperGUI"
+
+# 仓库信息（GitHub 和 Gitee 用户名不同）
+GITHUB_REPO = "LisseldeE/DeskHelperGUI"  # GitHub 用户名无下划线
+GITEE_REPO = "Lisselde_E/DeskHelperGUI"  # Gitee 用户名有下划线
+
+# API 端点
+GITHUB_API = f"https://api.github.com/repos/{GITHUB_REPO}/tags"
+GITEE_API = f"https://gitee.com/api/v5/repos/{GITEE_REPO}/tags"
+GITHUB_RELEASES = f"https://github.com/{GITHUB_REPO}/releases"
+GITEE_RELEASES = f"https://gitee.com/{GITEE_REPO}/releases"
 
 
 class AboutDialog(QDialog):
@@ -79,8 +88,8 @@ class AboutDialog(QDialog):
         author_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(author_label)
 
-        # GitHub链接（可点击）
-        github_label = QLabel(f"GitHub: {APP_REPO}")
+        # GitHub链接（可点击，始终显示 GitHub）
+        github_label = QLabel(f"GitHub: {GITHUB_REPO}")
         github_label.setStyleSheet("""
             QLabel {
                 font-size: 12px;
@@ -151,8 +160,8 @@ class AboutDialog(QDialog):
         self.setLayout(layout)
 
     def _open_github(self):
-        """打开GitHub链接"""
-        QDesktopServices.openUrl(QUrl(f"https://github.com/{APP_REPO}"))
+        """打开 GitHub 链接"""
+        QDesktopServices.openUrl(QUrl(f"https://github.com/{GITHUB_REPO}"))
 
     def _copy_email(self):
         """复制邮箱到剪贴板"""
@@ -161,12 +170,19 @@ class AboutDialog(QDialog):
         QMessageBox.information(self, t('about_info'), t('about_email_copied'))
 
     def _check_update(self):
-        """检查更新"""
+        """检查更新（根据语言选择 API 源）"""
         checking_text = t('about_check_update')
         try:
-            # 获取GitHub仓库的tags列表
-            url = f"https://api.github.com/repos/{APP_REPO}/tags"
-            req = urllib.request.Request(url)
+            # 根据语言选择 API 端点
+            if self.lang == 'zh':
+                api_url = GITEE_API
+                releases_url = GITEE_RELEASES
+            else:
+                api_url = GITHUB_API
+                releases_url = GITHUB_RELEASES
+
+            # 获取仓库的 tags 列表
+            req = urllib.request.Request(api_url)
             req.add_header('User-Agent', APP_NAME)
 
             with urllib.request.urlopen(req, timeout=10) as response:
@@ -176,7 +192,7 @@ class AboutDialog(QDialog):
                 QMessageBox.information(self, checking_text, t('about_no_tags'))
                 return
 
-            # 获取最新tag
+            # 获取最新 tag
             latest_tag = data[0]['name']
 
             # 解析当前版本号
@@ -250,7 +266,7 @@ class AboutDialog(QDialog):
                 msg_box.exec_()
 
                 if msg_box.clickedButton() == yes_btn:
-                    QDesktopServices.openUrl(QUrl(f"https://github.com/{APP_REPO}/releases"))
+                    QDesktopServices.openUrl(QUrl(releases_url))
             else:
                 # 已是最新版本
                 msg_box = QMessageBox(self)

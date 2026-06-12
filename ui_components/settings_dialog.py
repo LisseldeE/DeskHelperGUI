@@ -5,6 +5,7 @@ DeskHelperGUI 设置对话框
 """
 
 import os
+import platform
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
@@ -16,6 +17,47 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t
 from ui_components.animated_button import AnimatedButton
+
+
+def get_desktop_path():
+    """获取系统桌面路径"""
+    import ctypes
+    from ctypes import wintypes
+    
+    # Windows 系统使用 API 获取真实桌面路径
+    if platform.system() == 'Windows':
+        try:
+            # 使用 SHGetFolderPath API 获取桌面路径
+            # CSIDL_DESKTOP = 0x0000
+            CSIDL_DESKTOP = 0
+            SHGFP_TYPE_CURRENT = 0  # 获取当前路径，不是默认路径
+            
+            # 创建缓冲区
+            buf = ctypes.create_unicode_buffer(wintypes.MAX_PATH)
+            
+            # 调用 SHGetFolderPathW
+            ctypes.windll.shell32.SHGetFolderPathW(
+                None, CSIDL_DESKTOP, None, SHGFP_TYPE_CURRENT, buf
+            )
+            
+            path = buf.value
+            if path and os.path.exists(path):
+                return path
+        except Exception:
+            pass
+        
+        # 如果 API 失败，尝试备用方法
+        home = os.path.expanduser('~')
+        desktop_names = ['Desktop', '桌面']
+        for name in desktop_names:
+            path = os.path.join(home, name)
+            if os.path.exists(path):
+                return path
+        return os.path.join(home, 'Desktop')
+    else:
+        # macOS 和 Linux
+        home = os.path.expanduser('~')
+        return os.path.join(home, 'Desktop')
 
 
 class SettingsDialog(QDialog):
@@ -79,11 +121,19 @@ class SettingsDialog(QDialog):
                 border: 1px solid #339af0;
             }
         """)
-        # 加载当前保存路径
+        # 加载当前保存路径（若为空则使用桌面路径作为默认值）
         if self.config:
             current_path = self.config.get_save_path()
             if current_path:
                 self.save_input.setText(current_path)
+            else:
+                # 路径为空时，自动设置桌面路径作为默认值
+                desktop_path = get_desktop_path()
+                self.save_input.setText(desktop_path.replace('\\', '/'))
+        else:
+            # 无配置时，使用桌面路径作为默认值
+            desktop_path = get_desktop_path()
+            self.save_input.setText(desktop_path.replace('\\', '/'))
         path_layout.addWidget(self.save_input, 1)
 
         self.browse_btn = AnimatedButton(t('settings_browse'))

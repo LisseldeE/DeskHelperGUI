@@ -24,6 +24,7 @@ from ui_components import (
     STYLESHEET, SIDEBAR_BUTTON_STYLE, SIDEBAR_BUTTON_ACTIVE_STYLE,
     AboutDialog, AnimatedButton, NotificationBanner, SettingsDialog
 )
+from ui_components.settings_dialog import get_desktop_path
 from config_manager import ConfigManager
 from i18n import set_language, t, get_i18n
 
@@ -586,10 +587,9 @@ def main():
     if not config.get_save_path():
         startup_dialog = SettingsDialog(config.get_language(), config, None, is_startup=True)
         if not startup_dialog.exec_():
-            # 用户取消配置，使用默认路径（桌面）
-            desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
-            if os.path.exists(desktop_path):
-                config.set_save_path(desktop_path.replace('\\', '/'))
+            # 用户取消配置，使用桌面路径作为默认路径
+            desktop_path = get_desktop_path()
+            config.set_save_path(desktop_path.replace('\\', '/'))
 
     # 创建并显示主窗口
     window = MainWindow(config)
