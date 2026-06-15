@@ -20,6 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
+from .utils import get_unique_filepath
 
 # pandas延迟导入（优化启动速度）
 HAS_PANDAS = None  # 延迟检测
@@ -415,6 +416,9 @@ class FileNameExtractorWidget(QWidget):
         elif not save_path.endswith('.xlsx'):
             # 如果没有扩展名，添加扩展名
             save_path += '.xlsx'
+
+        # 处理文件名冲突（Windows风格：文件名（1））
+        save_path = get_unique_filepath(save_path)
 
         # 显示进度条
         self.progress_bar.setVisible(True)

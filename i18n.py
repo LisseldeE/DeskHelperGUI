@@ -18,7 +18,7 @@ LANGUAGES = {
         'feature_file_extractor': '文件名提取',
 
         # 关于对话框
-        'about_version': '版本：R3',
+        'about_version': '版本：R4',
         'about_desc': '桌面办公小助手，提供多种快捷实用功能，让日常办公更高效',
         'about_author': '作者：Lisselde_E',
         'about_check_update': '检查更新',
@@ -37,6 +37,8 @@ LANGUAGES = {
 
         # 设置对话框
         'settings_title': '设置',
+        'settings_save_path': '保存路径',
+        'settings_no_path': '未配置',
         'settings_no_path_tip': '未配置保存路径，在下方选择文件保存路径',
         'settings_save_path_tip': '修改全局保存路径',
         'settings_save_placeholder': '选择保存路径',
@@ -223,10 +225,11 @@ LANGUAGES = {
         'converter_all_done': '转换完成！\n文件已保存至：{}',
         'converter_partial_done': '转换完成 {} / {} 个文件\n文件已保存至：{}',
         'converter_failed': '转换失败：{}',
-        'converter_done': '格式转换完成！\n{}',
+        'converter_done': '格式转换完成！\n文件已保存至：{}',
 
         # PDF工具
         'feature_pdf_tool': 'PDF工具',
+        'feature_hash_checker': '哈希校验',
         'pdf_import': '文件导入',
         'pdf_import_placeholder': '拖拽PDF文件到此处，或点击右侧按钮选择',
         'pdf_import_tip': '支持 PDF 格式文件，可导入多个文件',
@@ -261,6 +264,30 @@ LANGUAGES = {
         'pdf_compress_done': 'PDF压缩完成！\n文件已保存至：{}',
         'pdf_compress_partial': 'PDF压缩完成 {} / {} 个文件\n文件已保存至：{}',
         'pdf_compress_failed': 'PDF压缩失败：{}',
+
+        # 哈希校验
+        'hash_file_group': '文件选择',
+        'hash_file_placeholder': '拖拽文件到此处，或点击右侧按钮选择',
+        'hash_file_tip': '拖拽文件到上方输入框，或点击"浏览..."按钮选择',
+        'hash_file_only': '请拖拽文件，不支持文件夹',
+        'hash_browse': '浏览...',
+        'hash_clear': '清空',
+        'hash_value_group': '哈希值',
+        'hash_mode_label': '哈希模式：',
+        'hash_value_placeholder': '选择文件后显示哈希值',
+        'hash_copy': '复制',
+        'hash_calculating': '正在计算...',
+        'hash_calc_error': '计算失败',
+        'hash_copied': '哈希值已复制到剪贴板',
+        'hash_verify_group': '校验哈希值',
+        'hash_verify_placeholder': '输入要校验的哈希值',
+        'hash_result_group': '比对结果',
+        'hash_result_waiting': '等待选择文件...',
+        'hash_result_no_hash': '请先计算文件哈希值',
+        'hash_result_match': '校验成功！哈希值匹配',
+        'hash_result_mismatch': '校验失败！哈希值不匹配',
+        'hash_select_file': '选择文件',
+        'hash_all_files': '所有文件',
     },
 
     'en': {
@@ -275,7 +302,7 @@ LANGUAGES = {
         'feature_file_extractor': 'File Name Extractor',
 
         # 关于对话框
-        'about_version': 'Version: R3',
+        'about_version': 'Version: R4',
         'about_desc': 'A compact desktop toolset offering quick utilities for more efficient daily office work',
         'about_author': 'Author: Lisselde_E',
         'about_check_update': 'Check Update',
@@ -294,6 +321,8 @@ LANGUAGES = {
 
         # 设置对话框
         'settings_title': 'Settings',
+        'settings_save_path': 'Save Path',
+        'settings_no_path': 'Not Configured',
         'settings_no_path_tip': 'Save path not configured. Please select a save path below',
         'settings_save_path_tip': 'Modify global save path',
         'settings_save_placeholder': 'Select save path',
@@ -480,10 +509,11 @@ LANGUAGES = {
         'converter_all_done': 'Conversion completed!\nFiles saved to: {}',
         'converter_partial_done': 'Converted {} / {} files\nFiles saved to: {}',
         'converter_failed': 'Conversion failed: {}',
-        'converter_done': 'Format conversion completed!\n{}',
+        'converter_done': 'Format conversion completed!\nFile saved to: {}',
 
         # PDF工具
         'feature_pdf_tool': 'PDF Tool',
+        'feature_hash_checker': 'Hash Checker',
         'pdf_import': 'File Import',
         'pdf_import_placeholder': 'Drag PDF files here, or click button to select',
         'pdf_import_tip': 'Supports PDF format files, multiple files can be imported',
@@ -518,6 +548,30 @@ LANGUAGES = {
         'pdf_compress_done': 'PDF compression completed!\nFiles saved to: {}',
         'pdf_compress_partial': 'PDF compression completed {} / {} files\nFiles saved to: {}',
         'pdf_compress_failed': 'PDF compression failed: {}',
+
+        # Hash Checker
+        'hash_file_group': 'File Selection',
+        'hash_file_placeholder': 'Drag file here, or click button to select',
+        'hash_file_tip': 'Drag file to the input above, or click "Browse..." button',
+        'hash_file_only': 'Please drag a file, folders not supported',
+        'hash_browse': 'Browse...',
+        'hash_clear': 'Clear',
+        'hash_value_group': 'Hash Value',
+        'hash_mode_label': 'Hash Mode:',
+        'hash_value_placeholder': 'Hash value will appear after selecting file',
+        'hash_copy': 'Copy',
+        'hash_calculating': 'Calculating...',
+        'hash_calc_error': 'Calculation failed',
+        'hash_copied': 'Hash value copied to clipboard',
+        'hash_verify_group': 'Verify Hash',
+        'hash_verify_placeholder': 'Enter hash value to verify',
+        'hash_result_group': 'Comparison Result',
+        'hash_result_waiting': 'Waiting for file...',
+        'hash_result_no_hash': 'Please calculate hash first',
+        'hash_result_match': 'Verification passed! Hash matches',
+        'hash_result_mismatch': 'Verification failed! Hash mismatch',
+        'hash_select_file': 'Select File',
+        'hash_all_files': 'All Files',
     }
 }
 

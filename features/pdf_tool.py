@@ -20,6 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
+from .utils import get_unique_filepath
 
 # PyMuPDF延迟导入
 HAS_PYMUPDF = None
@@ -668,17 +669,13 @@ class PDFToolWidget(QWidget):
             output_name = "merged.pdf"
             output_path = os.path.join(save_path, output_name)
             
-            # 如果文件已存在，添加数字后缀
-            counter = 1
-            while os.path.exists(output_path):
-                output_name = f"merged_{counter}.pdf"
-                output_path = os.path.join(save_path, output_name)
-                counter += 1
+            # 处理文件名冲突（Windows风格：文件名（1））
+            output_path = get_unique_filepath(output_path)
             
             merged_pdf.save(output_path)
             merged_pdf.close()
             
-            self.operation_finished.emit(True, t('pdf_merge_done', output_path.replace('\\', '/')))
+            self.operation_finished.emit(True, t('pdf_merge_done', os.path.basename(output_path)))
             
         except Exception as e:
             self.operation_finished.emit(False, t('pdf_merge_failed', str(e)))
@@ -725,7 +722,7 @@ class PDFToolWidget(QWidget):
                     # 跳过无法处理的文件
                     continue
             
-            self.operation_finished.emit(True, t('pdf_split_done', save_path.replace('\\', '/')))
+            self.operation_finished.emit(True, t('pdf_split_done', os.path.basename(save_path)))
             
         except Exception as e:
             self.operation_finished.emit(False, t('pdf_split_failed', str(e)))
@@ -756,12 +753,8 @@ class PDFToolWidget(QWidget):
                     output_name = f"{name_without_ext}_compressed.pdf"
                     output_path = os.path.join(save_path, output_name)
                     
-                    # 如果文件已存在，添加数字后缀
-                    counter = 1
-                    while os.path.exists(output_path):
-                        output_name = f"{name_without_ext}_compressed_{counter}.pdf"
-                        output_path = os.path.join(save_path, output_name)
-                        counter += 1
+                    # 处理文件名冲突（Windows风格：文件名（1））
+                    output_path = get_unique_filepath(output_path)
                     
                     # 压缩PDF
                     pdf.save(output_path, garbage=4, deflate=True)
@@ -778,9 +771,9 @@ class PDFToolWidget(QWidget):
                     continue
             
             if processed_files == total_files:
-                self.operation_finished.emit(True, t('pdf_compress_done', save_path.replace('\\', '/')))
+                self.operation_finished.emit(True, t('pdf_compress_done', os.path.basename(save_path)))
             else:
-                self.operation_finished.emit(True, t('pdf_compress_partial', processed_files, total_files, save_path.replace('\\', '/')))
+                self.operation_finished.emit(True, t('pdf_compress_partial', processed_files, total_files, os.path.basename(save_path)))
             
         except Exception as e:
             self.operation_finished.emit(False, t('pdf_compress_failed', str(e)))

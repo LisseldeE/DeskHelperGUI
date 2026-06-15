@@ -20,6 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
+from .utils import get_unique_filepath
 
 # PIL延迟导入（优化启动速度）
 HAS_PIL = None  # 延迟检测
@@ -1702,6 +1703,9 @@ class ImageProcessorWidget(QWidget):
                 
                 # 使用全局保存路径（目录）+ 文件名
                 final_save_path = os.path.join(save_path, default_name)
+                
+                # 处理文件名冲突（Windows风格：文件名（1））
+                final_save_path = get_unique_filepath(final_save_path)
                 
                 print(f"[DEBUG] Saving to: {final_save_path}")
                 print(f"[DEBUG] Original format: {self.original_file_ext}")

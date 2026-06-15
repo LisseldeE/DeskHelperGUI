@@ -24,6 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
+from .utils import get_unique_filepath
 
 # py7zr和pyzipper延迟导入（优化启动速度）
 HAS_PY7ZR = None  # 延迟检测
@@ -1060,6 +1061,9 @@ class QuickCompressWidget(QWidget):
             # 生成输出文件名
             output_name = self._generate_output_name(format_type, custom_name)
             output_path = os.path.join(save_path, output_name)
+            
+            # 处理文件名冲突（Windows风格：文件名（1））
+            output_path = get_unique_filepath(output_path)
 
             # 根据格式选择压缩方法
             if format_type == 'ZIP':

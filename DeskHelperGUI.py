@@ -15,9 +15,9 @@ import os
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QFrame, QStackedWidget, QSizePolicy
+    QPushButton, QLabel, QFrame, QStackedWidget, QSizePolicy, QGraphicsOpacityEffect
 )
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QIcon, QFont
 
 from ui_components import (
@@ -33,7 +33,7 @@ from i18n import set_language, t, get_i18n
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R3"
+APP_VERSION = "R4"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 APP_REPO = "LisseldeE/DeskHelperGUI"
@@ -258,6 +258,7 @@ class MainWindow(QMainWindow):
             ('image_processor', t('feature_image_processor')),
             ('format_converter', t('feature_format_converter')),
             ('pdf_tool', t('feature_pdf_tool')),
+            ('hash_checker', t('feature_hash_checker')),
             ('file_extractor', t('feature_file_extractor')),
         ]
 
@@ -340,10 +341,26 @@ class MainWindow(QMainWindow):
         self.feature_widgets['pdf_tool'] = pdf_tool_widget
         self.feature_stack.addWidget(pdf_tool_widget)
 
+    def _create_hash_checker_widget(self):
+        """创建哈希校验界面"""
+        if 'hash_checker' in self.feature_widgets:
+            return
+        from features import HashCheckerWidget
+        hash_checker_widget = HashCheckerWidget(self.lang, self.config)
+        hash_checker_widget.warning_requested.connect(self._on_hash_warning)
+        self.feature_widgets['hash_checker'] = hash_checker_widget
+        self.feature_stack.addWidget(hash_checker_widget)
+
     def _switch_feature(self, feature_id):
-        """切换功能界面"""
+        """切换功能界面（带淡入淡出动画）"""
         if feature_id == self.current_feature:
             return
+        
+        # 防止动画过程中重复切换
+        if hasattr(self, '_animation_in_progress') and self._animation_in_progress:
+            return
+        
+        self._animation_in_progress = True
 
         # 更新按钮样式
         for fid, btn in self.feature_buttons.items():
@@ -361,23 +378,98 @@ class MainWindow(QMainWindow):
             self._create_format_converter_widget()
         elif feature_id == 'pdf_tool' and feature_id not in self.feature_widgets:
             self._create_pdf_tool_widget()
+        elif feature_id == 'hash_checker' and feature_id not in self.feature_widgets:
+            self._create_hash_checker_widget()
 
-        # 切换界面
+        # 切换界面（带动画）
         if feature_id in self.feature_widgets:
-            widget = self.feature_widgets[feature_id]
-            self.feature_stack.setCurrentWidget(widget)
-            self.current_feature = feature_id
+            new_widget = self.feature_widgets[feature_id]
             
-            # 重新加载配置（确保全局路径同步）
-            # 使用 try 防止加载过程中的异常影响切换
-            try:
-                if hasattr(widget, '_load_config'):
-                    widget._load_config()
-            except Exception:
-                pass
+            # 淡出当前界面
+            if self.current_feature and self.current_feature in self.feature_widgets:
+                old_widget = self.feature_widgets[self.current_feature]
+                self._fade_out_widget(old_widget, lambda: self._show_new_widget(new_widget, feature_id))
+            else:
+                # 没有旧界面，直接显示新界面
+                self._show_new_widget(new_widget, feature_id)
+        else:
+            self._animation_in_progress = False
 
-            # 保存到配置
-            self.config.set_last_feature(feature_id)
+    def _fade_out_widget(self, widget, callback):
+        """淡出动画"""
+        try:
+            # 停止之前的动画
+            if hasattr(widget, '_fade_animation') and widget._fade_animation:
+                widget._fade_animation.stop()
+            
+            effect = QGraphicsOpacityEffect()
+            widget.setGraphicsEffect(effect)
+            
+            animation = QPropertyAnimation(effect, b"opacity")
+            animation.setDuration(100)
+            animation.setStartValue(1.0)
+            animation.setEndValue(0.0)
+            animation.setEasingCurve(QEasingCurve.OutQuad)
+            
+            animation.finished.connect(callback)
+            animation.start()
+            
+            # 保存动画引用防止被销毁
+            widget._fade_animation = animation
+        except Exception:
+            # 出错时直接执行回调
+            callback()
+
+    def _fade_in_widget(self, widget):
+        """淡入动画"""
+        try:
+            # 停止之前的动画
+            if hasattr(widget, '_fade_animation') and widget._fade_animation:
+                widget._fade_animation.stop()
+            
+            effect = QGraphicsOpacityEffect()
+            widget.setGraphicsEffect(effect)
+            
+            animation = QPropertyAnimation(effect, b"opacity")
+            animation.setDuration(100)
+            animation.setStartValue(0.0)
+            animation.setEndValue(1.0)
+            animation.setEasingCurve(QEasingCurve.InQuad)
+            
+            # 动画完成后清除effect和动画标志
+            def on_finished():
+                try:
+                    widget.setGraphicsEffect(None)
+                except Exception:
+                    pass
+                self._animation_in_progress = False
+            
+            animation.finished.connect(on_finished)
+            animation.start()
+            
+            # 保存动画引用防止被销毁
+            widget._fade_animation = animation
+        except Exception:
+            self._animation_in_progress = False
+
+    def _show_new_widget(self, widget, feature_id):
+        """显示新界面"""
+        # 切换到新界面
+        self.feature_stack.setCurrentWidget(widget)
+        self.current_feature = feature_id
+        
+        # 淡入动画
+        self._fade_in_widget(widget)
+        
+        # 重新加载配置（确保全局路径同步）
+        try:
+            if hasattr(widget, '_load_config'):
+                widget._load_config()
+        except Exception:
+            pass
+
+        # 保存到配置
+        self.config.set_last_feature(feature_id)
 
     def _toggle_language(self):
         """切换语言"""
@@ -408,6 +500,7 @@ class MainWindow(QMainWindow):
             'image_processor': t('feature_image_processor'),
             'format_converter': t('feature_format_converter'),
             'pdf_tool': t('feature_pdf_tool'),
+            'hash_checker': t('feature_hash_checker'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -451,7 +544,7 @@ class MainWindow(QMainWindow):
         """解压完成回调 - 显示顶部通知横幅"""
         if success:
             self.notification_banner.show_message(
-                t('extract_done', message),
+                t('extract_done', os.path.basename(message)),
                 type='success', duration=4000
             )
         else:
@@ -464,7 +557,7 @@ class MainWindow(QMainWindow):
         """文件名提取导出完成回调 - 显示顶部通知横幅"""
         if success:
             self.notification_banner.show_message(
-                t('extractor_export_done', message),
+                t('extractor_export_done', os.path.basename(message)),
                 type='success', duration=4000
             )
         else:
@@ -477,7 +570,7 @@ class MainWindow(QMainWindow):
         """图片处理完成回调 - 显示顶部通知横幅"""
         if success:
             self.notification_banner.show_message(
-                t('image_done', message),
+                t('image_done', os.path.basename(message)),
                 type='success', duration=4000
             )
         else:
@@ -503,9 +596,9 @@ class MainWindow(QMainWindow):
     def _on_converter_finished(self, success, message):
         """格式转换完成回调 - 显示顶部通知横幅"""
         if success:
-            # 成功时message是路径，直接显示路径
+            # 成功时message是路径，只显示文件名
             self.notification_banner.show_message(
-                message,
+                t('converter_done', os.path.basename(message)),
                 type='success', duration=4000
             )
         else:
@@ -539,6 +632,13 @@ class MainWindow(QMainWindow):
         self.notification_banner.show_message(
             message,
             type='warning', duration=3000
+        )
+
+    def _on_hash_warning(self, message):
+        """哈希校验警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='success', duration=2000
         )
 
     def resizeEvent(self, event):

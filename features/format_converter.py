@@ -19,6 +19,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t, get_i18n
 from ui_components import AnimatedButton
+from .utils import get_unique_filepath
 
 # PIL延迟导入
 HAS_PIL = None
@@ -725,6 +726,8 @@ class FormatConverterWidget(QWidget):
         
         # 保存ICO文件
         output_path = os.path.join(save_path, f"{original_name}.ico")
+        # 处理文件名冲突（Windows风格：文件名（1））
+        output_path = get_unique_filepath(output_path)
         resized_img.save(
             output_path,
             format='ICO',
@@ -763,6 +766,9 @@ class FormatConverterWidget(QWidget):
         # 保存文件
         output_path = os.path.join(save_path, f"{original_name}.{target_format}")
         
+        # 处理文件名冲突（Windows风格：文件名（1））
+        output_path = get_unique_filepath(output_path)
+        
         # 保存参数
         save_kwargs = {}
         if pil_format == 'JPEG':
@@ -799,6 +805,9 @@ class FormatConverterWidget(QWidget):
             
             # 保存图片
             output_path = os.path.join(save_path, f"{output_name}.{image_format}")
+            
+            # 处理文件名冲突（Windows风格：文件名（1））
+            output_path = get_unique_filepath(output_path)
             
             if image_format.lower() == 'jpg' or image_format.lower() == 'jpeg':
                 pix.save(output_path, "jpeg")

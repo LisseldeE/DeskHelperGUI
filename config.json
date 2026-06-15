@@ -1,10 +1,13 @@
 {
     "language": "zh",
-    "last_feature": "quick_compress",
+    "last_feature": "hash_checker",
     "save_path": "C:/SyncHub/DeskTop",
     "compress": {
         "format": "ZIP",
         "level": 2,
         "encrypt": false
+    },
+    "hash_checker": {
+        "mode": "MD5"
     }
 }

@@ -21,6 +21,9 @@ class ConfigManager:
             'format': 'ZIP',        # 压缩格式
             'level': 2,             # 压缩级别索引 (0-4)
             'encrypt': False,       # 是否加密
+        },
+        'hash_checker': {
+            'mode': 'MD5',          # 哈希模式
         }
     }
 
