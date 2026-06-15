@@ -259,6 +259,7 @@ class MainWindow(QMainWindow):
             ('format_converter', t('feature_format_converter')),
             ('pdf_tool', t('feature_pdf_tool')),
             ('hash_checker', t('feature_hash_checker')),
+            ('qr_tool', t('feature_qr_tool')),
             ('file_extractor', t('feature_file_extractor')),
         ]
 
@@ -351,6 +352,17 @@ class MainWindow(QMainWindow):
         self.feature_widgets['hash_checker'] = hash_checker_widget
         self.feature_stack.addWidget(hash_checker_widget)
 
+    def _create_qr_tool_widget(self):
+        """创建二维码工具界面"""
+        if 'qr_tool' in self.feature_widgets:
+            return
+        from features import QRToolWidget
+        qr_tool_widget = QRToolWidget(self.lang, self.config)
+        qr_tool_widget.warning_requested.connect(self._on_qr_warning)
+        qr_tool_widget.success_requested.connect(self._on_qr_success)
+        self.feature_widgets['qr_tool'] = qr_tool_widget
+        self.feature_stack.addWidget(qr_tool_widget)
+
     def _switch_feature(self, feature_id):
         """切换功能界面（带淡入淡出动画）"""
         if feature_id == self.current_feature:
@@ -380,6 +392,8 @@ class MainWindow(QMainWindow):
             self._create_pdf_tool_widget()
         elif feature_id == 'hash_checker' and feature_id not in self.feature_widgets:
             self._create_hash_checker_widget()
+        elif feature_id == 'qr_tool' and feature_id not in self.feature_widgets:
+            self._create_qr_tool_widget()
 
         # 切换界面（带动画）
         if feature_id in self.feature_widgets:
@@ -501,6 +515,7 @@ class MainWindow(QMainWindow):
             'format_converter': t('feature_format_converter'),
             'pdf_tool': t('feature_pdf_tool'),
             'hash_checker': t('feature_hash_checker'),
+            'qr_tool': t('feature_qr_tool'),
         }
         for feature_id, text in features_text.items():
             if feature_id in self.feature_buttons:
@@ -636,6 +651,20 @@ class MainWindow(QMainWindow):
 
     def _on_hash_warning(self, message):
         """哈希校验警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='success', duration=2000
+        )
+
+    def _on_qr_warning(self, message):
+        """二维码工具警告回调"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=2000
+        )
+
+    def _on_qr_success(self, message):
+        """二维码工具成功回调"""
         self.notification_banner.show_message(
             message,
             type='success', duration=2000
