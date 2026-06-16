@@ -44,7 +44,51 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - **PDF Merge**: Merge multiple PDF files into one
 - **PDF Compress**: Compress PDF file size to reduce storage space
 
+### File Hash Verification
+- Import files for hash calculation
+- Support MD5, SHA-1, SHA-256, SHA-512 algorithms
+- Compare with existing hash values for verification
+- Export hash value results
+
+### QR Code Tool
+- **Generate QR Code**: Support text, URL, WiFi, business card, contact information conversion
+- **Decode QR Code**: Recognize QR code image content
+- **Custom Style**: Adjust QR code color and background color
+- Support exporting QR code images
+
+### File Encryption
+- **File Encryption**: Encrypt files with password, support AES-256 encryption algorithm
+- **File Decryption**: Decrypt encrypted files with password
+- **Large File Optimization**: Use chunked encryption for large files, real-time progress display
+- Support cancel operation, automatic cleanup of temporary files
+
 ## Update Log
+
+### 2026.6.13 R4
+**#01**
+- Fixed issue where duplicate files in export path would directly replace target files
+- Fixed issue where top notification banner message was too long
+- Unified information style displayed in top notification banner for all modules
+- Added feature - File hash verification
+- Added dynamic transition animation to main interface
+
+**#02**
+- Added feature - QR Code Tool
+- Support text, URL, WiFi, business card, contact information conversion
+- Added QR code decoding mode
+- Added custom QR code style (color and background color)
+- Optimized interface layout display logic
+
+**#03**
+- Added feature - File Encryption
+- Support file encryption and encrypted file decryption
+- Optimized logic for large file encryption/decryption
+- Optimized memory logic for large file encryption/decryption
+- Fixed issue where duplicate name saving logic caused some modules to crash
+- Optimized program memory stack, increased stability
+
+**#04**
+- Updated content of two introduction files
 
 ### 2026.6.8 R1
 **#01**
@@ -107,6 +151,8 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - PyQt5 (GUI Framework)
 - Pillow (Image Processing)
 - Pandas + OpenPyXL (Excel Export)
+- cryptography (File Encryption)
+- qrcode (QR Code Generation)
 
 ## Installation and Running
 
@@ -116,7 +162,7 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 
 ### Install Dependencies
 ```bash
-pip install PyQt5 Pillow pandas openpyxl PyMuPDF
+pip install PyQt5 Pillow pandas openpyxl PyMuPDF cryptography qrcode[pil]
 ```
 
 ### Run Program
