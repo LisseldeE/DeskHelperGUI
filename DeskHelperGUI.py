@@ -259,6 +259,7 @@ class MainWindow(QMainWindow):
             ('format_converter', t('feature_format_converter')),
             ('pdf_tool', t('feature_pdf_tool')),
             ('hash_checker', t('feature_hash_checker')),
+            ('file_encrypt', t('feature_file_encrypt')),
             ('qr_tool', t('feature_qr_tool')),
             ('file_extractor', t('feature_file_extractor')),
         ]
@@ -352,6 +353,17 @@ class MainWindow(QMainWindow):
         self.feature_widgets['hash_checker'] = hash_checker_widget
         self.feature_stack.addWidget(hash_checker_widget)
 
+    def _create_file_encrypt_widget(self):
+        """创建文件加密界面"""
+        if 'file_encrypt' in self.feature_widgets:
+            return
+        from features import FileEncryptWidget
+        file_encrypt_widget = FileEncryptWidget(self.lang, self.config)
+        file_encrypt_widget.warning_requested.connect(self._on_file_encrypt_warning)
+        file_encrypt_widget.success_requested.connect(self._on_file_encrypt_success)
+        self.feature_widgets['file_encrypt'] = file_encrypt_widget
+        self.feature_stack.addWidget(file_encrypt_widget)
+
     def _create_qr_tool_widget(self):
         """创建二维码工具界面"""
         if 'qr_tool' in self.feature_widgets:
@@ -392,6 +404,8 @@ class MainWindow(QMainWindow):
             self._create_pdf_tool_widget()
         elif feature_id == 'hash_checker' and feature_id not in self.feature_widgets:
             self._create_hash_checker_widget()
+        elif feature_id == 'file_encrypt' and feature_id not in self.feature_widgets:
+            self._create_file_encrypt_widget()
         elif feature_id == 'qr_tool' and feature_id not in self.feature_widgets:
             self._create_qr_tool_widget()
 
@@ -515,6 +529,7 @@ class MainWindow(QMainWindow):
             'format_converter': t('feature_format_converter'),
             'pdf_tool': t('feature_pdf_tool'),
             'hash_checker': t('feature_hash_checker'),
+            'file_encrypt': t('feature_file_encrypt'),
             'qr_tool': t('feature_qr_tool'),
         }
         for feature_id, text in features_text.items():
@@ -654,6 +669,20 @@ class MainWindow(QMainWindow):
         self.notification_banner.show_message(
             message,
             type='success', duration=2000
+        )
+
+    def _on_file_encrypt_warning(self, message):
+        """文件加密警告回调"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=2000
+        )
+
+    def _on_file_encrypt_success(self, message):
+        """文件加密成功回调"""
+        self.notification_banner.show_message(
+            message,
+            type='success', duration=4000
         )
 
     def _on_qr_warning(self, message):
