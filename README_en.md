@@ -18,11 +18,11 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - **File Compression**: Choose compression format, compression level, and encryption options; save compressed files with global path
 - **Quick Decompression**: Automatically identify compressed packages, support encrypted file decryption, save decompressed files with global path
 
-### File Name Extraction
-- Select folder to extract file names from
-- Option to include or exclude file extensions
-- Display extracted file name list
-- Export to Excel file
+### File Processing
+- **File Name Extraction**: Select folder to extract file names, option to include or exclude extensions, export to Excel file
+- **Batch Rename**: Support prefix/suffix, number sequence, text replacement, regex and other renaming rules
+- **Batch Create**: Read list from Excel file, batch create folders or files
+- Use global save path, support drag-and-drop import
 
 ### Image Processing
 - Import image files
@@ -63,6 +63,18 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - Support cancel operation, automatic cleanup of temporary files
 
 ## Update Log
+
+### 2026.6.18 R5
+**#01**
+- Added feature - File Processing
+- Merged file name extraction module, added batch rename and batch create sub-features
+- Fixed issue where some control text displayed abnormally after switching language in all modules
+- Fixed program crash caused by switching language
+- Fixed occasional crash on program startup
+
+**#02**
+- Updated content of two introduction files
+- Released R5 build version
 
 ### 2026.6.13 R4
 **#01**

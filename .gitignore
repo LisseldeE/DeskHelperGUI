@@ -5,5 +5,6 @@ output/
 
 *.exe
 
+config.json
 功能参照.py
 1.txt
