@@ -192,8 +192,22 @@ class AboutDialog(QDialog):
                 QMessageBox.information(self, checking_text, t('about_no_tags'))
                 return
 
-            # 获取最新 tag
-            latest_tag = data[0]['name']
+            # 遍历所有 tags，找到版本号最大的那个
+            latest_tag = None
+            latest_version_num = -1
+            
+            for tag in data:
+                tag_name = tag.get('name', '')
+                version_match = re.search(r'R(\d+)', tag_name)
+                if version_match:
+                    version_num = int(version_match.group(1))
+                    if version_num > latest_version_num:
+                        latest_version_num = version_num
+                        latest_tag = tag_name
+
+            if latest_tag is None:
+                QMessageBox.warning(self, checking_text, t('about_remote_parse_error'))
+                return
 
             # 解析当前版本号
             current_version_match = re.search(r'R(\d+)', APP_VERSION)
