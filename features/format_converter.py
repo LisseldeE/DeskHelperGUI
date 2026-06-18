@@ -203,9 +203,9 @@ class FormatConverterWidget(QWidget):
         format_layout.setContentsMargins(8, 10, 8, 10)
 
         # 目标格式选择
-        format_label = QLabel(t('converter_target_format'))
-        format_label.setStyleSheet("color: #495057; font-size: 13px;")
-        format_layout.addWidget(format_label)
+        self.format_label = QLabel(t('converter_target_format'))
+        self.format_label.setStyleSheet("color: #495057; font-size: 13px;")
+        format_layout.addWidget(self.format_label)
 
         self.format_combo = QComboBox()
         self.format_combo.addItems(['JPG', 'PNG', 'ICO', 'BMP', 'GIF', 'WebP', 'PDF→JPG', 'PDF→PNG'])
@@ -245,9 +245,9 @@ class FormatConverterWidget(QWidget):
         ico_layout.setContentsMargins(8, 10, 8, 10)
 
         # ICO尺寸选择
-        size_label = QLabel(t('converter_ico_size'))
-        size_label.setStyleSheet("color: #495057; font-size: 13px;")
-        ico_layout.addWidget(size_label)
+        self.size_label = QLabel(t('converter_ico_size'))
+        self.size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        ico_layout.addWidget(self.size_label)
 
         # ICO尺寸单选按钮（竖向布局）
         self.ico_size_group = QButtonGroup(self)
@@ -317,9 +317,9 @@ class FormatConverterWidget(QWidget):
 
         # 文件列表标题行（清空按钮靠右侧边框）
         list_header = QHBoxLayout()
-        list_label = QLabel(t('converter_file_list'))
-        list_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold;")
-        list_header.addWidget(list_label)
+        self.list_label = QLabel(t('converter_file_list'))
+        self.list_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold;")
+        list_header.addWidget(self.list_label)
         
         list_header.addStretch()
         
@@ -871,11 +871,14 @@ class FormatConverterWidget(QWidget):
         self.browse_btn.setText(t('converter_browse'))
         
         self.format_group.setTitle(t('converter_format_settings'))
+        self.format_label.setText(t('converter_target_format'))
         # 格式选项保持不变
         
         self.ico_group.setTitle(t('converter_ico_settings'))
+        self.size_label.setText(t('converter_ico_size'))
         self.ico_size_tip.setText(t('converter_ico_size_tip'))
         
+        self.list_label.setText(t('converter_file_list'))
         self.file_count_label.setText(t('converter_file_count', len(self.file_list)))
         
         self.list_clear_btn.setText(t('converter_clear'))

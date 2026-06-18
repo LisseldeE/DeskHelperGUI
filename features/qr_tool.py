@@ -270,9 +270,9 @@ class QRToolWidget(QWidget):
         layout.setSpacing(12)
 
         # 标题（无背景框）
-        title_label = QLabel(t('qr_content'))
-        title_label.setStyleSheet("color: #495057; font-size: 14px; font-weight: bold; background: transparent;")
-        layout.addWidget(title_label)
+        self.content_title_label = QLabel(t('qr_content'))
+        self.content_title_label.setStyleSheet("color: #495057; font-size: 14px; font-weight: bold; background: transparent;")
+        layout.addWidget(self.content_title_label)
 
         # 使用StackedWidget切换不同模式的输入界面
         self.input_stack = QStackedWidget()
@@ -309,9 +309,9 @@ class QRToolWidget(QWidget):
         remark_layout.setContentsMargins(0, 0, 0, 0)
         remark_layout.setSpacing(0)
 
-        remark_label = QLabel(t('qr_remark'))
-        remark_label.setStyleSheet("color: #868e96; font-size: 12px; background: transparent;")
-        remark_layout.addWidget(remark_label)
+        self.remark_label = QLabel(t('qr_remark'))
+        self.remark_label.setStyleSheet("color: #868e96; font-size: 12px; background: transparent;")
+        remark_layout.addWidget(self.remark_label)
 
         self.remark_input = QLineEdit()
         self.remark_input.setPlaceholderText(t('qr_remark_placeholder'))
@@ -1060,6 +1060,10 @@ class QRToolWidget(QWidget):
         self.export_btn.setText(t('qr_export_start'))
         self._update_path_label()
 
+        # 更新内容标题标签
+        if hasattr(self, 'content_title_label'):
+            self.content_title_label.setText(t('qr_content'))
+
         # 更新文本模式占位符
         if hasattr(self, 'text_input'):
             self.text_input.setPlaceholderText(t('qr_text_placeholder'))
@@ -1108,14 +1112,9 @@ class QRToolWidget(QWidget):
             self.decode_drag_hint.setText(t('qr_decode_drag_hint'))
 
         # 更新备注标签和占位符
+        if hasattr(self, 'remark_label'):
+            self.remark_label.setText(t('qr_remark'))
         if hasattr(self, 'remark_input'):
-            # 查找备注标签
-            if hasattr(self, 'remark_container'):
-                remark_layout = self.remark_container.layout()
-                if remark_layout:
-                    remark_label = remark_layout.itemAt(0)
-                    if remark_label and remark_label.widget():
-                        remark_label.widget().setText(t('qr_remark'))
             self.remark_input.setPlaceholderText(t('qr_remark_placeholder'))
 
         # 更新预览面板标签

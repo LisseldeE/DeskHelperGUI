@@ -33,7 +33,7 @@ from i18n import set_language, t, get_i18n
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R3"
+APP_VERSION = "R5"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 APP_REPO = "LisseldeE/DeskHelperGUI"
@@ -260,8 +260,8 @@ class MainWindow(QMainWindow):
             ('pdf_tool', t('feature_pdf_tool')),
             ('hash_checker', t('feature_hash_checker')),
             ('file_encrypt', t('feature_file_encrypt')),
+            ('file_processor', t('feature_file_processor')),
             ('qr_tool', t('feature_qr_tool')),
-            ('file_extractor', t('feature_file_extractor')),
         ]
 
         for feature_id, feature_name in features:
@@ -299,16 +299,16 @@ class MainWindow(QMainWindow):
         self.feature_widgets['quick_compress'] = quick_compress_widget
         self.feature_stack.addWidget(quick_compress_widget)
 
-    def _create_file_extractor_widget(self):
-        """创建文件名提取界面"""
-        if 'file_extractor' in self.feature_widgets:
+    def _create_file_processor_widget(self):
+        """创建文件处理界面"""
+        if 'file_processor' in self.feature_widgets:
             return
-        from features import FileNameExtractorWidget
-        file_extractor_widget = FileNameExtractorWidget(self.lang, self.config)
-        file_extractor_widget.export_finished.connect(self._on_extractor_finished)
-        file_extractor_widget.warning_requested.connect(self._on_extractor_warning)
-        self.feature_widgets['file_extractor'] = file_extractor_widget
-        self.feature_stack.addWidget(file_extractor_widget)
+        from features import FileProcessorWidget
+        file_processor_widget = FileProcessorWidget(self.lang, self.config)
+        file_processor_widget.warning_requested.connect(self._on_file_processor_warning)
+        file_processor_widget.success_requested.connect(self._on_file_processor_success)
+        self.feature_widgets['file_processor'] = file_processor_widget
+        self.feature_stack.addWidget(file_processor_widget)
 
     def _create_image_processor_widget(self):
         """创建图片处理界面"""
@@ -394,8 +394,8 @@ class MainWindow(QMainWindow):
                 btn.setStyleSheet(SIDEBAR_BUTTON_STYLE)
 
         # 延迟创建界面（如果尚未创建）
-        if feature_id == 'file_extractor' and feature_id not in self.feature_widgets:
-            self._create_file_extractor_widget()
+        if feature_id == 'file_processor' and feature_id not in self.feature_widgets:
+            self._create_file_processor_widget()
         elif feature_id == 'image_processor' and feature_id not in self.feature_widgets:
             self._create_image_processor_widget()
         elif feature_id == 'format_converter' and feature_id not in self.feature_widgets:
@@ -524,7 +524,7 @@ class MainWindow(QMainWindow):
         # 更新功能按钮文本
         features_text = {
             'quick_compress': t('feature_quick_compress'),
-            'file_extractor': t('feature_file_extractor'),
+            'file_processor': t('feature_file_processor'),
             'image_processor': t('feature_image_processor'),
             'format_converter': t('feature_format_converter'),
             'pdf_tool': t('feature_pdf_tool'),
@@ -583,18 +583,19 @@ class MainWindow(QMainWindow):
                 type='error', duration=5000
             )
 
-    def _on_extractor_finished(self, success, message):
-        """文件名提取导出完成回调 - 显示顶部通知横幅"""
-        if success:
-            self.notification_banner.show_message(
-                t('extractor_export_done', os.path.basename(message)),
-                type='success', duration=4000
-            )
-        else:
-            self.notification_banner.show_message(
-                t('extractor_export_failed', message),
-                type='error', duration=5000
-            )
+    def _on_file_processor_warning(self, message):
+        """文件处理警告回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='warning', duration=3000
+        )
+
+    def _on_file_processor_success(self, message):
+        """文件处理成功回调 - 显示顶部通知横幅"""
+        self.notification_banner.show_message(
+            message,
+            type='success', duration=4000
+        )
 
     def _on_image_finished(self, success, message):
         """图片处理完成回调 - 显示顶部通知横幅"""
@@ -611,13 +612,6 @@ class MainWindow(QMainWindow):
 
     def _on_image_warning(self, message):
         """图片处理警告回调 - 显示顶部通知横幅"""
-        self.notification_banner.show_message(
-            message,
-            type='warning', duration=3000
-        )
-
-    def _on_extractor_warning(self, message):
-        """文件名提取警告回调 - 显示顶部通知横幅"""
         self.notification_banner.show_message(
             message,
             type='warning', duration=3000

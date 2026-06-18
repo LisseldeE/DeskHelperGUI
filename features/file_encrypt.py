@@ -226,9 +226,9 @@ class FileEncryptWidget(QWidget):
         header_layout = QHBoxLayout()
         header_layout.setSpacing(10)
         
-        list_label = QLabel(t('encrypt_file_list'))
-        list_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold;")
-        header_layout.addWidget(list_label)
+        self.list_label = QLabel(t('encrypt_file_list'))
+        self.list_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold;")
+        header_layout.addWidget(self.list_label)
         
         header_layout.addStretch()
         
@@ -345,19 +345,19 @@ class FileEncryptWidget(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
 
         # 标题
-        title_label = QLabel(t('encrypt_password_title'))
-        title_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold; background: transparent;")
-        title_label.setAlignment(Qt.AlignCenter)
-        content_layout.addWidget(title_label)
+        self.title_label = QLabel(t('encrypt_password_title'))
+        self.title_label.setStyleSheet("color: #495057; font-size: 13px; font-weight: bold; background: transparent;")
+        self.title_label.setAlignment(Qt.AlignCenter)
+        content_layout.addWidget(self.title_label)
 
         # 密码输入行
         pwd_row = QHBoxLayout()
         pwd_row.setSpacing(8)
         
-        pwd_label = QLabel(t('encrypt_password'))
-        pwd_label.setStyleSheet("color: #495057; font-size: 12px; background: transparent;")
-        pwd_label.setFixedWidth(50)
-        pwd_row.addWidget(pwd_label)
+        self.pwd_label = QLabel(t('encrypt_password'))
+        self.pwd_label.setStyleSheet("color: #495057; font-size: 12px; background: transparent;")
+        self.pwd_label.setFixedWidth(50)
+        pwd_row.addWidget(self.pwd_label)
         
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText(t('encrypt_password_placeholder'))
@@ -407,10 +407,10 @@ class FileEncryptWidget(QWidget):
         confirm_row.setSpacing(8)
         confirm_row.setContentsMargins(0, 0, 0, 0)
         
-        confirm_label = QLabel(t('encrypt_confirm_password'))
-        confirm_label.setStyleSheet("color: #495057; font-size: 12px; background: transparent;")
-        confirm_label.setFixedWidth(50)
-        confirm_row.addWidget(confirm_label)
+        self.confirm_label = QLabel(t('encrypt_confirm_password'))
+        self.confirm_label.setStyleSheet("color: #495057; font-size: 12px; background: transparent;")
+        self.confirm_label.setFixedWidth(50)
+        confirm_row.addWidget(self.confirm_label)
         
         self.confirm_input = QLineEdit()
         self.confirm_input.setPlaceholderText(t('encrypt_confirm_placeholder'))
@@ -1103,6 +1103,7 @@ class FileEncryptWidget(QWidget):
 
     def _update_ui_text(self):
         """更新UI文本"""
+        self.list_label.setText(t('encrypt_file_list'))
         self.tip_label.setText(t('encrypt_import_tip'))
         self.file_count_label.setText(t('encrypt_file_count', len(self.file_list)))
         
@@ -1113,6 +1114,24 @@ class FileEncryptWidget(QWidget):
         
         self.browse_btn.setText(t('encrypt_browse'))
         self.clear_btn.setText(t('encrypt_clear'))
+        
+        # 更新密码面板文本
+        self.title_label.setText(t('encrypt_password_title'))
+        self.pwd_label.setText(t('encrypt_password'))
+        self.password_input.setPlaceholderText(t('encrypt_password_placeholder'))
+        self.confirm_label.setText(t('encrypt_confirm_password'))
+        self.confirm_input.setPlaceholderText(t('encrypt_confirm_placeholder'))
+        
+        # 更新空状态提示
+        self.empty_hint_label.setText(t('encrypt_hint_no_file'))
+        
+        # 更新密码提示（根据当前状态）
+        if self.file_list:
+            # 有文件时，调用 _on_password_changed 更新提示
+            self._on_password_changed()
+        else:
+            # 无文件时，显示空状态提示
+            self.password_hint_label.setText(t('encrypt_hint_no_file'))
         
         # 更新按钮文本
         if self.file_list and all(f[1] for f in self.file_list):

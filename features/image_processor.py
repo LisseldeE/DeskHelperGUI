@@ -324,9 +324,9 @@ class ImageProcessorWidget(QWidget):
 
         # 角度选择
         angle_layout = QHBoxLayout()
-        angle_label = QLabel(t('image_angle'))
-        angle_label.setStyleSheet("color: #495057; font-size: 13px;")
-        angle_layout.addWidget(angle_label)
+        self.angle_label = QLabel(t('image_angle'))
+        self.angle_label.setStyleSheet("color: #495057; font-size: 13px;")
+        angle_layout.addWidget(self.angle_label)
 
         self.angle_combo = QComboBox()
         self.angle_combo.addItems(['90°', '180°', '270°', t('image_angle_custom')])
@@ -434,9 +434,9 @@ class ImageProcessorWidget(QWidget):
         crop_layout.addWidget(self.crop_enable_check)
 
         # 预设尺寸选择
-        preset_label = QLabel(t('image_preset_size'))
-        preset_label.setStyleSheet("color: #495057; font-size: 13px;")
-        crop_layout.addWidget(preset_label)
+        self.preset_label = QLabel(t('image_preset_size'))
+        self.preset_label.setStyleSheet("color: #495057; font-size: 13px;")
+        crop_layout.addWidget(self.preset_label)
 
         self.preset_combo = QComboBox()
         self._update_preset_sizes()
@@ -467,9 +467,9 @@ class ImageProcessorWidget(QWidget):
         crop_layout.addWidget(self.preset_combo)
 
         # 自定义尺寸
-        custom_size_label = QLabel(t('image_custom_size'))
-        custom_size_label.setStyleSheet("color: #495057; font-size: 13px;")
-        crop_layout.addWidget(custom_size_label)
+        self.custom_size_label = QLabel(t('image_custom_size'))
+        self.custom_size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        crop_layout.addWidget(self.custom_size_label)
 
         size_input_layout = QHBoxLayout()
         
@@ -596,9 +596,9 @@ class ImageProcessorWidget(QWidget):
         compress_layout.addWidget(self.compress_enable_check)
 
         # 目标大小
-        size_label = QLabel(t('image_target_size'))
-        size_label.setStyleSheet("color: #495057; font-size: 13px;")
-        compress_layout.addWidget(size_label)
+        self.size_label = QLabel(t('image_target_size'))
+        self.size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        compress_layout.addWidget(self.size_label)
 
         # 滑块和数值
         slider_layout = QHBoxLayout()
@@ -667,9 +667,9 @@ class ImageProcessorWidget(QWidget):
         id_photo_layout.setContentsMargins(8, 8, 8, 8)
 
         # 证件照尺寸选择
-        photo_size_label = QLabel(t('id_photo_size'))
-        photo_size_label.setStyleSheet("color: #495057; font-size: 13px;")
-        id_photo_layout.addWidget(photo_size_label)
+        self.photo_size_label = QLabel(t('id_photo_size'))
+        self.photo_size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(self.photo_size_label)
 
         self.id_photo_size_combo = QComboBox()
         self._update_id_photo_sizes()
@@ -700,9 +700,9 @@ class ImageProcessorWidget(QWidget):
         id_photo_layout.addWidget(self.id_photo_size_combo)
 
         # 相纸尺寸选择
-        paper_size_label = QLabel(t('id_photo_paper_size'))
-        paper_size_label.setStyleSheet("color: #495057; font-size: 13px;")
-        id_photo_layout.addWidget(paper_size_label)
+        self.paper_size_label = QLabel(t('id_photo_paper_size'))
+        self.paper_size_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(self.paper_size_label)
 
         self.paper_size_combo = QComboBox()
         self._update_paper_sizes()
@@ -733,9 +733,9 @@ class ImageProcessorWidget(QWidget):
         id_photo_layout.addWidget(self.paper_size_combo)
 
         # 排版方式选择
-        layout_mode_label = QLabel(t('id_photo_layout_mode'))
-        layout_mode_label.setStyleSheet("color: #495057; font-size: 13px;")
-        id_photo_layout.addWidget(layout_mode_label)
+        self.layout_mode_label = QLabel(t('id_photo_layout_mode'))
+        self.layout_mode_label.setStyleSheet("color: #495057; font-size: 13px;")
+        id_photo_layout.addWidget(self.layout_mode_label)
 
         layout_mode_container = QHBoxLayout()
         self.layout_horizontal_radio = QRadioButton(t('id_photo_layout_horizontal'))
@@ -787,15 +787,15 @@ class ImageProcessorWidget(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
 
         # 预览标题
-        preview_title = QLabel(t('image_preview'))
-        preview_title.setStyleSheet("""
+        self.preview_title = QLabel(t('image_preview'))
+        self.preview_title.setStyleSheet("""
             QLabel {
                 color: #495057;
                 font-size: 14px;
                 font-weight: 600;
             }
         """)
-        layout.addWidget(preview_title)
+        layout.addWidget(self.preview_title)
 
         # 预览区域（带滚动）
         scroll_area = QScrollArea()
@@ -1799,22 +1799,30 @@ class ImageProcessorWidget(QWidget):
         self.id_photo_radio.setText(t('image_id_photo_layout'))
         
         self.rotate_enable_check.setText(t('image_enable'))
+        self.angle_label.setText(t('image_angle'))
         self.angle_combo.setItemText(3, t('image_angle_custom'))
         self.custom_angle_label.setText(t('image_custom_angle'))
         
         self.crop_enable_check.setText(t('image_enable'))
+        self.preset_label.setText(t('image_preset_size'))
         self._update_preset_sizes()
+        self.custom_size_label.setText(t('image_custom_size'))
         self.keep_ratio_checkbox.setText(t('image_keep_ratio'))
         
         self.compress_enable_check.setText(t('image_enable'))
+        self.size_label.setText(t('image_target_size'))
         self.estimate_label.setText("")
         
         # 更新证件照排版相关文本
+        self.photo_size_label.setText(t('id_photo_size'))
         self._update_id_photo_sizes()
+        self.paper_size_label.setText(t('id_photo_paper_size'))
         self._update_paper_sizes()
+        self.layout_mode_label.setText(t('id_photo_layout_mode'))
         self.layout_horizontal_radio.setText(t('id_photo_layout_horizontal'))
         self.layout_vertical_radio.setText(t('id_photo_layout_vertical'))
         
+        self.preview_title.setText(t('image_preview'))
         self.reset_btn.setText(t('image_reset'))
         self.save_btn.setText(t('image_save'))
         

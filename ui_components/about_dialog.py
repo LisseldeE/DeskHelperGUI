@@ -24,13 +24,13 @@ from ui_components.animated_button import AnimatedButton
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R4"
+APP_VERSION = "R5"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 
 # 仓库信息（GitHub 和 Gitee 用户名不同）
-GITHUB_REPO = "LisseldeE/DeskHelperGUI"  # GitHub 用户名无下划线
-GITEE_REPO = "Lisselde_E/DeskHelperGUI"  # Gitee 用户名有下划线
+GITHUB_REPO = "LisseldeE/DeskHelperGUI"
+GITEE_REPO = "Lisselde_E/DeskHelperGUI"
 
 # API 端点
 GITHUB_API = f"https://api.github.com/repos/{GITHUB_REPO}/tags"

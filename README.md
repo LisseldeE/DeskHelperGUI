@@ -7,7 +7,7 @@ DeskHelperGUI 是一款桌面办公辅助工具，提供多种快捷实用功能
 ## 项目信息
 
 - **项目名称**: DeskHelperGUI
-- **项目版本**: R4
+- **项目版本**: R5
 - **项目作者**: Lisselde_E
 - **联系邮箱**: Lisselde.E@outlook.com
 - **项目仓库**: https://github.com/LisseldeE/DeskHelperGUI

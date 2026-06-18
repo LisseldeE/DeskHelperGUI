@@ -4,7 +4,7 @@ DeskHelperGUI 功能模块
 """
 
 from .quick_compress import QuickCompressWidget
-from .file_name_extractor import FileNameExtractorWidget
+from .file_processor import FileProcessorWidget
 from .image_processor import ImageProcessorWidget
 from .format_converter import FormatConverterWidget
 from .pdf_tool import PDFToolWidget
@@ -15,7 +15,7 @@ from .utils import get_unique_filepath
 
 __all__ = [
     'QuickCompressWidget', 
-    'FileNameExtractorWidget', 
+    'FileProcessorWidget', 
     'ImageProcessorWidget', 
     'FormatConverterWidget', 
     'PDFToolWidget',
