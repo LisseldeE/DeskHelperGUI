@@ -5,6 +5,7 @@ DeskHelperGUI 配置管理模块
 """
 
 import os
+import sys
 import json
 from pathlib import Path
 
@@ -23,29 +24,30 @@ class ConfigManager:
             'encrypt': False,       # 是否加密
         },
         'hash_checker': {
-            'mode': 'MD5',          # 哈希模式
+            'mode': 'SHA256',       # 哈希模式
         }
     }
 
     def __init__(self, config_file='config.json'):
         """初始化配置管理器"""
-        # 配置文件路径（在程序目录下）
+        # 配置文件路径（在用户AppData目录下）
         self.config_path = self._get_config_path(config_file)
         self.config = self._load_config()
 
     def _get_config_path(self, config_file):
-        """获取配置文件路径"""
-        # 尝试获取程序所在目录
-        try:
-            # PyInstaller打包后的路径
-            if getattr(sys, 'frozen', False):
-                base_path = os.path.dirname(sys.executable)
-            else:
-                base_path = os.path.dirname(os.path.abspath(__file__))
-        except NameError:
-            base_path = os.getcwd()
-
-        return os.path.join(base_path, config_file)
+        """获取配置文件路径（保存在用户AppData目录下）"""
+        # 使用用户AppData目录
+        appdata_path = os.environ.get('APPDATA')
+        if appdata_path:
+            config_dir = os.path.join(appdata_path, 'DeskHelperGUI')
+        else:
+            # 回退到用户主目录
+            config_dir = os.path.join(os.path.expanduser('~'), '.DeskHelperGUI')
+        
+        # 确保目录存在
+        os.makedirs(config_dir, exist_ok=True)
+        
+        return os.path.join(config_dir, config_file)
 
     def _load_config(self):
         """加载配置"""
@@ -135,7 +137,3 @@ class ConfigManager:
         """设置全局保存路径"""
         self.set('save_path', path)
         self.save_config()
-
-
-# 导入sys模块（用于获取程序路径）
-import sys

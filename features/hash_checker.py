@@ -374,6 +374,11 @@ class HashCheckerWidget(QWidget):
         # 获取第一个文件
         first_path = urls[0].toLocalFile()
         if os.path.isfile(first_path):
+            # 清除上次计算的哈希值
+            self.current_hash = ""
+            self.hash_value_input.clear()
+            self._update_result('waiting')
+            
             self.selected_file = first_path
             self.file_input.setText(first_path)
             self._calculate_hash()
@@ -390,6 +395,11 @@ class HashCheckerWidget(QWidget):
             t('hash_all_files')
         )
         if file_path:
+            # 清除上次计算的哈希值
+            self.current_hash = ""
+            self.hash_value_input.clear()
+            self._update_result('waiting')
+            
             self.selected_file = file_path
             self.file_input.setText(file_path)
             self._calculate_hash()
