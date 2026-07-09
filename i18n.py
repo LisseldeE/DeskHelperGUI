@@ -265,6 +265,22 @@ LANGUAGES = {
         'pdf_compress_partial': 'PDF压缩完成 {} / {} 个文件\n文件已保存至：{}',
         'pdf_compress_failed': 'PDF压缩失败：{}',
 
+        # PDF转Word
+        'pdf_to_word': '转Word',
+        'pdf_word_settings': 'Word转换设置',
+        'pdf_page_range': '页面范围：',
+        'pdf_page_range_all': '全部页面',
+        'pdf_page_range_custom': '自定义范围',
+        'pdf_page_range_placeholder': '例如: 1-5, 8, 10-12',
+        'pdf_format_quality': '转换质量：',
+        'pdf_format_desc': '自动保留表格、图片、样式\n注意: 空格定位的布局转换效果较差',
+        'pdf_word_done': 'PDF转Word完成！\n文件已保存至：{}',
+        'pdf_word_partial': 'PDF转Word完成 {} / {} 个文件\n文件已保存至：{}',
+        'pdf_word_failed': 'PDF转Word失败：{}',
+        'pdf_need_docx_lib': '需要安装 pdf2docx 库才能转Word\n请运行: pip install pdf2docx',
+        'pdf_page_range_invalid': '页面范围格式错误，请使用正确的格式\n例如: 1-5, 8, 10-12',
+        'pdf_scanned_warning': '警告: 扫描PDF(图片PDF)转换效果较差\n建议使用OCR工具先识别文字',
+
         # 哈希校验
         'hash_file_group': '文件选择',
         'hash_file_placeholder': '拖拽文件到此处，或点击右侧按钮选择',
@@ -736,6 +752,22 @@ LANGUAGES = {
         'pdf_compress_done': 'PDF compression completed!\nFiles saved to: {}',
         'pdf_compress_partial': 'PDF compression completed {} / {} files\nFiles saved to: {}',
         'pdf_compress_failed': 'PDF compression failed: {}',
+
+        # PDF转Word
+        'pdf_to_word': 'To Word',
+        'pdf_word_settings': 'Word Conversion Settings',
+        'pdf_page_range': 'Page Range:',
+        'pdf_page_range_all': 'All Pages',
+        'pdf_page_range_custom': 'Custom Range',
+        'pdf_page_range_placeholder': 'e.g.: 1-5, 8, 10-12',
+        'pdf_format_quality': 'Conversion Quality:',
+        'pdf_format_desc': 'Automatically preserves tables, images, styles\nNote: Space-based layouts may not convert well',
+        'pdf_word_done': 'PDF to Word completed!\nFiles saved to: {}',
+        'pdf_word_partial': 'PDF to Word completed {} / {} files\nFiles saved to: {}',
+        'pdf_word_failed': 'PDF to Word failed: {}',
+        'pdf_need_docx_lib': 'pdf2docx library required for Word conversion\nPlease run: pip install pdf2docx',
+        'pdf_page_range_invalid': 'Invalid page range format, please use correct format\ne.g.: 1-5, 8, 10-12',
+        'pdf_scanned_warning': 'Warning: Scanned PDFs (image PDFs) have poor conversion results\nRecommend using OCR tools first',
 
         # Hash Checker
         'hash_file_group': 'File Selection',

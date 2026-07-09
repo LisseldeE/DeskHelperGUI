@@ -6,6 +6,7 @@ DeskHelperGUI PDF工具功能模块
 
 import os
 import threading
+import traceback
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QLineEdit, QProgressBar, QGroupBox, QComboBox, QCheckBox,
@@ -15,6 +16,13 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer, QMimeData
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QDrag
+
+# 导入pdf2docx库
+try:
+    from pdf2docx import parse, Converter
+    PDF2DOCX_AVAILABLE = True
+except ImportError:
+    PDF2DOCX_AVAILABLE = False
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -368,6 +376,22 @@ class PDFToolWidget(QWidget):
         self.operation_group.addButton(self.compress_radio, 2)
         mode_layout.addWidget(self.compress_radio)
 
+        # 转Word
+        self.word_radio = QRadioButton(t('pdf_to_word'))
+        self.word_radio.setStyleSheet("""
+            QRadioButton {
+                color: #495057;
+                font-size: 13px;
+                spacing: 8px;
+            }
+            QRadioButton::indicator {
+                width: 16px;
+                height: 16px;
+            }
+        """)
+        self.operation_group.addButton(self.word_radio, 3)
+        mode_layout.addWidget(self.word_radio)
+
         self.mode_group.setLayout(mode_layout)
         layout.addWidget(self.mode_group)
 
@@ -426,6 +450,102 @@ class PDFToolWidget(QWidget):
         """)
         self.compress_settings_group.setVisible(False)  # 默认隐藏
         layout.addWidget(self.compress_settings_group)
+
+        # Word转换设置区域(仅转Word模式时显示)
+        self.word_settings_group = QGroupBox(t('pdf_word_settings'))
+        word_layout = QVBoxLayout()
+        word_layout.setSpacing(6)
+        word_layout.setContentsMargins(8, 10, 8, 10)
+
+        # 页面范围选择
+        page_range_label = QLabel(t('pdf_page_range'))
+        page_range_label.setStyleSheet("color: #495057; font-size: 13px;")
+        word_layout.addWidget(page_range_label)
+
+        # 页面范围单选按钮组
+        self.page_range_group = QButtonGroup(self)
+        
+        # 全部页面
+        self.page_all_radio = QRadioButton(t('pdf_page_range_all'))
+        self.page_all_radio.setChecked(True)
+        self.page_all_radio.setStyleSheet("""
+            QRadioButton {
+                color: #495057;
+                font-size: 12px;
+                spacing: 6px;
+            }
+            QRadioButton::indicator {
+                width: 14px;
+                height: 14px;
+            }
+        """)
+        self.page_range_group.addButton(self.page_all_radio, 0)
+        word_layout.addWidget(self.page_all_radio)
+
+        # 自定义范围
+        self.page_custom_radio = QRadioButton(t('pdf_page_range_custom'))
+        self.page_custom_radio.setStyleSheet("""
+            QRadioButton {
+                color: #495057;
+                font-size: 12px;
+                spacing: 6px;
+            }
+            QRadioButton::indicator {
+                width: 14px;
+                height: 14px;
+            }
+        """)
+        self.page_range_group.addButton(self.page_custom_radio, 1)
+        word_layout.addWidget(self.page_custom_radio)
+
+        # 自定义范围输入框
+        self.page_range_input = QLineEdit()
+        self.page_range_input.setPlaceholderText(t('pdf_page_range_placeholder'))
+        self.page_range_input.setFixedHeight(28)
+        self.page_range_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #e9ecef;
+                color: #495057;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                padding: 0 8px;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #339af0;
+                background-color: white;
+            }
+        """)
+        self.page_range_input.setEnabled(False)  # 默认禁用
+        word_layout.addWidget(self.page_range_input)
+
+        # 连接页面范围单选按钮变化信号
+        self.page_range_group.buttonClicked.connect(self._on_page_range_changed)
+
+        # 格式说明
+        format_label = QLabel(t('pdf_format_quality'))
+        format_label.setStyleSheet("color: #495057; font-size: 13px; margin-top: 6px;")
+        word_layout.addWidget(format_label)
+
+        # 格式说明文本
+        format_desc = QLabel(t('pdf_format_desc'))
+        format_desc.setStyleSheet("color: #868e96; font-size: 12px; padding: 0px 4px;")
+        format_desc.setWordWrap(True)
+        word_layout.addWidget(format_desc)
+
+        self.word_settings_group.setLayout(word_layout)
+        self.word_settings_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                margin-top: 12px;
+                padding-top: 8px;
+                background-color: white;
+            }
+        """)
+        self.word_settings_group.setVisible(False)  # 默认隐藏
+        layout.addWidget(self.word_settings_group)
 
         # 连接单选按钮变化信号
         self.operation_group.buttonClicked.connect(self._on_operation_changed)
@@ -527,8 +647,22 @@ class PDFToolWidget(QWidget):
         # 压缩模式时显示压缩设置
         if button == self.compress_radio:
             self.compress_settings_group.setVisible(True)
+            self.word_settings_group.setVisible(False)
+        # 转Word模式时显示Word设置
+        elif button == self.word_radio:
+            self.compress_settings_group.setVisible(False)
+            self.word_settings_group.setVisible(True)
         else:
             self.compress_settings_group.setVisible(False)
+            self.word_settings_group.setVisible(False)
+
+    def _on_page_range_changed(self, button):
+        """页面范围选择变化"""
+        # 自定义范围时启用输入框
+        if button == self.page_custom_radio:
+            self.page_range_input.setEnabled(True)
+        else:
+            self.page_range_input.setEnabled(False)
 
     def _update_file_list(self):
         """更新文件列表显示"""
@@ -580,10 +714,22 @@ class PDFToolWidget(QWidget):
 
     def _start_processing(self):
         """开始处理"""
-        # 检查PyMuPDF库
-        if not self._check_pymupdf():
-            self.warning_requested.emit(t('pdf_need_pymupdf'))
-            return
+        # 检查所需库
+        operation = self.operation_group.checkedId()
+        
+        # 合并、拆分、压缩需要PyMuPDF
+        if operation in [0, 1, 2]:
+            if not self._check_pymupdf():
+                self.warning_requested.emit(t('pdf_need_pymupdf'))
+                return
+        
+        # 转Word需要pdf2docx
+        if operation == 3:
+            try:
+                import pdf2docx
+            except ImportError:
+                self.warning_requested.emit(t('pdf_need_docx_lib'))
+                return
 
         # 验证文件列表
         if not self.file_list:
@@ -604,7 +750,12 @@ class PDFToolWidget(QWidget):
                 self.warning_requested.emit(t('pdf_create_path_failed', str(e)))
                 return
 
-        # 禁用按钮，显示进度条
+        # 获取操作参数
+        quality_index = self.quality_combo.currentIndex()
+        page_range_type = self.page_range_group.checkedId()
+        page_range_text = self.page_range_input.text() if page_range_type == 1 else ""
+
+        # 禁用按钮,显示进度条
         self.process_btn.setEnabled(False)
         self.browse_btn.setEnabled(False)
         self.clear_btn.setEnabled(False)
@@ -612,21 +763,15 @@ class PDFToolWidget(QWidget):
         self.progress_bar.setVisible(True)
         self.is_processing = True
 
-        # 获取操作模式
-        operation = self.operation_group.checkedId()
-        
-        # 获取压缩质量（仅压缩模式时使用）
-        quality_index = self.quality_combo.currentIndex()
-
         # 在新线程中执行操作
         thread = threading.Thread(
             target=self._process_thread,
-            args=(operation, save_path, quality_index),
+            args=(operation, save_path, quality_index, page_range_type, page_range_text),
             daemon=True
         )
         thread.start()
 
-    def _process_thread(self, operation, save_path, quality_index):
+    def _process_thread(self, operation, save_path, quality_index, page_range_type=0, page_range_text=""):
         """处理线程"""
         try:
             import fitz  # PyMuPDF
@@ -637,6 +782,8 @@ class PDFToolWidget(QWidget):
                 self._split_pdfs(save_path)
             elif operation == 2:  # 压缩PDF
                 self._compress_pdfs(save_path, quality_index)
+            elif operation == 3:  # 转Word
+                self._pdf_to_word(save_path, page_range_type, page_range_text)
         except Exception as e:
             self.operation_finished.emit(False, str(e))
         finally:
@@ -778,6 +925,181 @@ class PDFToolWidget(QWidget):
         except Exception as e:
             self.operation_finished.emit(False, t('pdf_compress_failed', str(e)))
 
+    def _pdf_to_word(self, save_path, page_range_type, page_range_text):
+        """PDF转Word - 使用pdf2docx库"""
+        from pdf2docx import Converter
+        import fitz  # PyMuPDF
+        
+        try:
+            total_files = len(self.file_list)
+            processed_files = 0
+            
+            for file_idx, file_path in enumerate(self.file_list):
+                try:
+                    # 检查是否为扫描PDF(图片PDF)
+                    pdf_doc = fitz.open(file_path)
+                    is_scanned = self._check_scanned_pdf(pdf_doc)
+                    pdf_doc.close()
+                    
+                    if is_scanned:
+                        # 扫描PDF,跳过并记录警告
+                        self.warning_requested.emit(t('pdf_scanned_warning'))
+                        continue
+                    
+                    # 解析页面范围
+                    pages_to_convert, error_msg = self._parse_page_range(page_range_type, page_range_text, file_path)
+                    if error_msg:
+                        # 页面范围解析失败
+                        self.operation_finished.emit(False, error_msg)
+                        return
+                    
+                    # 确定开始和结束页码
+                    if pages_to_convert is None:
+                        # 全部页面
+                        start_page = 0
+                        end_page = None
+                    else:
+                        # 自定义范围 - 使用第一个和最后一个页码
+                        start_page = pages_to_convert[0]
+                        end_page = pages_to_convert[-1] + 1  # pdf2docx的end是exclusive
+                    
+                    # 输出文件路径
+                    file_name = os.path.splitext(os.path.basename(file_path))[0]
+                    output_name = f"{file_name}.docx"
+                    output_path = os.path.join(save_path, output_name)
+                    
+                    # 处理文件名冲突
+                    output_path = get_unique_filepath(output_path)
+                    
+                    # 检查pdf2docx库是否可用
+                    if not PDF2DOCX_AVAILABLE:
+                        raise Exception("pdf2docx库未安装,请运行: pip install pdf2docx")
+                    
+                    # 使用parse()函数转换 - 支持start和end参数
+                    try:
+                        # parse函数支持页面范围参数
+                        parse(file_path, output_path, start=start_page, end=end_page)
+                        
+                        # 验证文件是否正确生成
+                        if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                            # 验证DOCX文件格式
+                            try:
+                                import zipfile
+                                with zipfile.ZipFile(output_path, 'r') as zip_ref:
+                                    # DOCX文件必须包含这些核心文件
+                                    required_files = ['[Content_Types].xml', 'word/document.xml']
+                                    missing_files = [f for f in required_files if f not in zip_ref.namelist()]
+                                    if missing_files:
+                                        raise Exception(f"生成的DOCX文件缺少核心文件: {missing_files}")
+                            except zipfile.BadZipFile:
+                                raise Exception("生成的文件不是有效的DOCX格式")
+                        else:
+                            raise Exception("转换后的文件无效或大小为0")
+                            
+                    except Exception as conv_error:
+                        # 向用户显示错误信息
+                        error_msg = f"PDF转换失败: {os.path.basename(file_path)}\n错误: {str(conv_error)}"
+                        self.warning_requested.emit(error_msg)
+                        print(f"详细错误信息:\n{traceback.format_exc()}")
+                        raise
+                    
+                    processed_files += 1
+                    
+                    # 更新进度
+                    progress = int((file_idx + 1) / total_files * 100)
+                    self.progress_updated.emit(progress)
+                    
+                except Exception as e:
+                    # 记录错误但继续处理其他文件
+                    print(f"文件处理失败: {file_path}, 错误: {e}")
+                    continue
+            
+            if processed_files == total_files:
+                self.operation_finished.emit(True, t('pdf_word_done', os.path.basename(save_path)))
+            else:
+                self.operation_finished.emit(True, t('pdf_word_partial', processed_files, total_files, os.path.basename(save_path)))
+            
+        except Exception as e:
+            self.operation_finished.emit(False, t('pdf_word_failed', str(e)))
+    
+    def _check_scanned_pdf(self, pdf_doc):
+        """检查PDF是否为扫描版(图片PDF)
+        
+        Args:
+            pdf_doc: PyMuPDF打开的PDF文档对象
+        
+        Returns:
+            True=扫描PDF, False=文本PDF
+        """
+        # 检查前几页的文字数量
+        max_pages_to_check = min(5, len(pdf_doc))
+        
+        for page_idx in range(max_pages_to_check):
+            page = pdf_doc[page_idx]
+            text = page.get_text()
+            
+            # 如果找到文字,则不是扫描PDF
+            if len(text.strip()) > 50:  # 至少50个字符
+                return False
+        
+        # 如果前几页都没有文字,可能是扫描PDF
+        return True
+
+    def _parse_page_range(self, page_range_type, page_range_text, pdf_path):
+        """解析页面范围
+        
+        Args:
+            page_range_type: 0=全部页面, 1=自定义范围
+            page_range_text: 页面范围文本,如"1-5, 8, 10-12"
+            pdf_path: PDF文件路径
+        
+        Returns:
+            (pages_to_convert, error_msg)
+            - pages_to_convert: None表示全部页面,list表示指定页面,空list表示解析失败
+            - error_msg: 错误消息,None表示成功
+        """
+        import pdfplumber
+        
+        if page_range_type == 0:
+            # 全部页面,返回None表示使用全部
+            return (None, None)
+        
+        # 获取PDF总页数
+        with pdfplumber.open(pdf_path) as pdf:
+            total_pages = len(pdf.pages)
+        
+        # 解析自定义范围
+        pages = []
+        try:
+            # 分割范围字符串
+            parts = page_range_text.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # 范围: "1-5"
+                    start, end = part.split('-')
+                    start = int(start.strip())
+                    end = int(end.strip())
+                    # 转换为0-based索引
+                    for page_num in range(start - 1, end):
+                        if 0 <= page_num < total_pages:
+                            pages.append(page_num)
+                else:
+                    # 单页: "8"
+                    page_num = int(part) - 1
+                    if 0 <= page_num < total_pages:
+                        pages.append(page_num)
+            
+            if not pages:
+                return ([], t('pdf_page_range_invalid'))
+            
+            # 去重并排序
+            pages = sorted(set(pages))
+            return (pages, None)
+            
+        except Exception:
+            return ([], t('pdf_page_range_invalid'))
+
     def on_operation_finished(self, success, message):
         """操作完成回调"""
         # 恢复按钮状态，隐藏进度条
@@ -801,10 +1123,15 @@ class PDFToolWidget(QWidget):
         self.merge_radio.setText(t('pdf_merge'))
         self.split_radio.setText(t('pdf_split'))
         self.compress_radio.setText(t('pdf_compress'))
+        self.word_radio.setText(t('pdf_to_word'))
         self.compress_settings_group.setTitle(t('pdf_compress_settings'))
         self.quality_combo.setItemText(0, t('pdf_quality_high'))
         self.quality_combo.setItemText(1, t('pdf_quality_medium'))
         self.quality_combo.setItemText(2, t('pdf_quality_low'))
+        self.word_settings_group.setTitle(t('pdf_word_settings'))
+        self.page_all_radio.setText(t('pdf_page_range_all'))
+        self.page_custom_radio.setText(t('pdf_page_range_custom'))
+        self.page_range_input.setPlaceholderText(t('pdf_page_range_placeholder'))
         self.file_count_label.setText(t('pdf_file_count', len(self.file_list)))
         self.process_btn.setText(t('pdf_start'))
         
