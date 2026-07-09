@@ -33,7 +33,7 @@ from i18n import set_language, t, get_i18n
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R5"
+APP_VERSION = "R6"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 APP_REPO = "LisseldeE/DeskHelperGUI"

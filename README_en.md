@@ -2,15 +2,19 @@
 
 ## Project Overview
 
-DeskHelperGUI is a desktop office assistant tool that provides various quick and practical features to make daily office work more efficient.
+DeskHelperGUI is a desktop office assistant tool that provides various quick and practical features to make daily office work more efficient. Supports file compression, image processing, PDF operations, QR code generation, and many other practical functions with a simple and easy-to-use interface.
 
 ## Project Information
 
 - **Project Name**: DeskHelperGUI
-- **Version**: R5
 - **Author**: Lisselde_E
 - **Email**: Lisselde.E@outlook.com
 - **Repository**: https://github.com/LisseldeE/DeskHelperGUI
+
+## Download
+
+- **GitHub Releases**: https://github.com/LisseldeE/DeskHelperGUI/releases
+- **Gitee Mirror**: https://gitee.com/Lisselde_E/DeskHelperGUI/releases (Recommended for users in China)
 
 ## Features
 
@@ -40,9 +44,13 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 
 ### PDF Processing
 - Import PDF files
-- **PDF Split**: Split PDF into single-page or multi-page files
+- **PDF Split**: Split PDF into single-page or multi-page files, support custom page range
 - **PDF Merge**: Merge multiple PDF files into one
 - **PDF Compress**: Compress PDF file size to reduce storage space
+- **PDF to Word**: Convert PDF to Word document, preserving tables, images, and styles, with page range selection
+  - Automatically preserves table structure and image positions
+  - Support all pages or custom range conversion
+  - Note: Space-based layouts may not convert well, scanned PDFs are not supported
 
 ### File Hash Verification
 - Import files for hash calculation
@@ -64,98 +72,17 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 
 ## Update Log
 
-### 2026.6.18 R5
+### 2026.7.9 R6
+
 **#01**
-- Added feature - File Processing
-- Merged file name extraction module, added batch rename and batch create sub-features
-- Fixed issue where some control text displayed abnormally after switching language in all modules
-- Fixed program crash caused by switching language
-- Fixed occasional crash on program startup
+- Updated configuration file save path
+- Fixed issue where hash verification old data remained when importing new files
 
 **#02**
-- Updated content of two introduction files
-- Released R5 build version
+- Added PDF tool - PDF to Word feature
+- Moved configuration file save path
 
-### 2026.6.13 R4
-**#01**
-- Fixed issue where duplicate files in export path would directly replace target files
-- Fixed issue where top notification banner message was too long
-- Unified information style displayed in top notification banner for all modules
-- Added feature - File hash verification
-- Added dynamic transition animation to main interface
-
-**#02**
-- Added feature - QR Code Tool
-- Support text, URL, WiFi, business card, contact information conversion
-- Added QR code decoding mode
-- Added custom QR code style (color and background color)
-- Optimized interface layout display logic
-
-**#03**
-- Added feature - File Encryption
-- Support file encryption and encrypted file decryption
-- Optimized logic for large file encryption/decryption
-- Optimized memory logic for large file encryption/decryption
-- Fixed issue where duplicate name saving logic caused some modules to crash
-- Optimized program memory stack, increased stability
-
-**#04**
-- Updated content of two introduction files
-
-### 2026.6.8 R1
-**#01**
-- Initial software interface construction
-- Added compression functionality
-- Adapted multi-language display
-
-**#02**
-- Optimized interface DPI adaptation
-- Optimized information notification style
-- Added button animation and transition styles
-- Optimized button text display logic
-- Completed compression functionality construction
-- Built program icon
-
-### 2026.6.9
-**#03**
-- Added feature - File name extraction
-- Fixed global path save/read issues
-- Completed file name extraction functionality construction
-
-**#04**
-- Added feature - Image processing
-- Optimized image processing logic
-- Fixed button jumping issue when adjusting window size
-
-### 2026.6.10 R2
-**#01**
-- Added global settings button
-- Changed save path to global save path, removed individual configuration in modules
-- Added save path configuration dialog on startup
-- Optimized program startup speed
-
-**#02**
-- Added feature - Format conversion
-- Added PDF to JPG, PNG format options
-- Optimized interface notification banner style
-- Optimized output path display in other modules
-
-### 2026.6.11 R3
-**#01**
-- Added feature - PDF Processing
-- Added PDF file split, merge and compress
-- Optimized progress bar display rendering logic for all modules
-- Optimized and unified interface layout logic for all modules
-
-**#02**
-- Added feature - Image Processing - ID Photo Layout
-- Added multiple layout presets and paper size presets
-- Layout can freely adjust photo arrangement
-- In ID photo layout mode, other processing methods are temporarily disabled
-
-**#03**
-- Added default user desktop settings path
-- Added domestic download source, intelligent switching to optimize download update experience
+See [Update Log](https://github.com/LisseldeE/DeskHelperGUI/blob/main/update.log)
 
 ## Technology Stack
 
@@ -163,6 +90,8 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 - PyQt5 (GUI Framework)
 - Pillow (Image Processing)
 - Pandas + OpenPyXL (Excel Export)
+- PyMuPDF (PDF Processing)
+- pdf2docx (PDF to Word)
 - cryptography (File Encryption)
 - qrcode (QR Code Generation)
 
@@ -174,7 +103,7 @@ DeskHelperGUI is a desktop office assistant tool that provides various quick and
 
 ### Install Dependencies
 ```bash
-pip install PyQt5 Pillow pandas openpyxl PyMuPDF cryptography qrcode[pil]
+pip install PyQt5 Pillow pandas openpyxl PyMuPDF pdf2docx cryptography qrcode[pil]
 ```
 
 ### Run Program
@@ -184,7 +113,11 @@ python DeskHelperGUI.py
 
 ## Open Source License
 
-This project uses the MIT open source license, see [LICENSE](LICENSE) file for details.
+This project uses the MIT open source license, see [LICENSE](https://github.com/LisseldeE/DeskHelperGUI/blob/main/LICENSE) file for details.
+
+## Privacy Policy
+
+This project does not collect any user data. All configuration files are saved in the user's local directory. See relevant privacy statement for details.
 
 ## Contact and Feedback
 

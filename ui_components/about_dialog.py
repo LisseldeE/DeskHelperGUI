@@ -24,7 +24,7 @@ from ui_components.animated_button import AnimatedButton
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
-APP_VERSION = "R5"
+APP_VERSION = "R6"
 APP_AUTHOR = "Lisselde_E"
 APP_EMAIL = "Lisselde.E@outlook.com"
 

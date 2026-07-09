@@ -927,8 +927,7 @@ class PDFToolWidget(QWidget):
 
     def _pdf_to_word(self, save_path, page_range_type, page_range_text):
         """PDF转Word - 使用pdf2docx库"""
-        from pdf2docx import Converter
-        import fitz  # PyMuPDF
+        import fitz  # PyMuPDF - 用于检测扫描PDF
         
         try:
             total_files = len(self.file_list)
@@ -975,9 +974,9 @@ class PDFToolWidget(QWidget):
                     if not PDF2DOCX_AVAILABLE:
                         raise Exception("pdf2docx库未安装,请运行: pip install pdf2docx")
                     
-                    # 使用parse()函数转换 - 支持start和end参数
+                    # 使用parse()函数转换 - 不使用multi_processing避免日志重复
                     try:
-                        # parse函数支持页面范围参数
+                        # parse函数支持start和end参数
                         parse(file_path, output_path, start=start_page, end=end_page)
                         
                         # 验证文件是否正确生成

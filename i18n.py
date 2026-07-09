@@ -18,7 +18,7 @@ LANGUAGES = {
         'feature_file_extractor': '文件名提取',
 
         # 关于对话框
-        'about_version': '版本：R5',
+        'about_version': '版本：R6',
         'about_desc': '桌面办公小助手，提供多种快捷实用功能，让日常办公更高效',
         'about_author': '作者：Lisselde_E',
         'about_check_update': '检查更新',
@@ -506,7 +506,7 @@ LANGUAGES = {
         'feature_file_extractor': 'File Name Extractor',
 
         # 关于对话框
-        'about_version': 'Version: R5',
+        'about_version': 'Version: R6',
         'about_desc': 'A compact desktop toolset offering quick utilities for more efficient daily office work',
         'about_author': 'Author: Lisselde_E',
         'about_check_update': 'Check Update',
