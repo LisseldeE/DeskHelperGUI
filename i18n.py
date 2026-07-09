@@ -278,6 +278,7 @@ LANGUAGES = {
         'pdf_word_partial': 'PDF转Word完成 {} / {} 个文件\n文件已保存至：{}',
         'pdf_word_failed': 'PDF转Word失败：{}',
         'pdf_need_docx_lib': '需要安装 pdf2docx 库才能转Word\n请运行: pip install pdf2docx',
+        'pdf_file_process_failed': '文件处理失败: {}\n错误: {}',
         'pdf_page_range_invalid': '页面范围格式错误，请使用正确的格式\n例如: 1-5, 8, 10-12',
         'pdf_scanned_warning': '警告: 扫描PDF(图片PDF)转换效果较差\n建议使用OCR工具先识别文字',
 
@@ -766,8 +767,9 @@ LANGUAGES = {
         'pdf_word_partial': 'PDF to Word completed {} / {} files\nFiles saved to: {}',
         'pdf_word_failed': 'PDF to Word failed: {}',
         'pdf_need_docx_lib': 'pdf2docx library required for Word conversion\nPlease run: pip install pdf2docx',
-        'pdf_page_range_invalid': 'Invalid page range format, please use correct format\ne.g.: 1-5, 8, 10-12',
-        'pdf_scanned_warning': 'Warning: Scanned PDFs (image PDFs) have poor conversion results\nRecommend using OCR tools first',
+        'pdf_file_process_failed': 'File processing failed: {}\nError: {}',
+        'pdf_page_range_invalid': 'Invalid page range format, please use correct format\nExample: 1-5, 8, 10-12',
+        'pdf_scanned_warning': 'Warning: Scanned PDF (image PDF) conversion quality may be poor\nRecommend using OCR tool first',
 
         # Hash Checker
         'hash_file_group': 'File Selection',

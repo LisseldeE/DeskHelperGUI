@@ -17,12 +17,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer, QMimeData
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QDrag
 
-# 导入pdf2docx库
-try:
-    from pdf2docx import parse, Converter
-    PDF2DOCX_AVAILABLE = True
-except ImportError:
-    PDF2DOCX_AVAILABLE = False
+# pdf2docx延迟导入标志
+PDF2DOCX_AVAILABLE = None
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -523,15 +519,15 @@ class PDFToolWidget(QWidget):
         self.page_range_group.buttonClicked.connect(self._on_page_range_changed)
 
         # 格式说明
-        format_label = QLabel(t('pdf_format_quality'))
-        format_label.setStyleSheet("color: #495057; font-size: 13px; margin-top: 6px;")
-        word_layout.addWidget(format_label)
+        self.format_label = QLabel(t('pdf_format_quality'))
+        self.format_label.setStyleSheet("color: #495057; font-size: 13px; margin-top: 6px;")
+        word_layout.addWidget(self.format_label)
 
         # 格式说明文本
-        format_desc = QLabel(t('pdf_format_desc'))
-        format_desc.setStyleSheet("color: #868e96; font-size: 12px; padding: 0px 4px;")
-        format_desc.setWordWrap(True)
-        word_layout.addWidget(format_desc)
+        self.format_desc = QLabel(t('pdf_format_desc'))
+        self.format_desc.setStyleSheet("color: #868e96; font-size: 12px; padding: 0px 4px;")
+        self.format_desc.setWordWrap(True)
+        word_layout.addWidget(self.format_desc)
 
         self.word_settings_group.setLayout(word_layout)
         self.word_settings_group.setStyleSheet("""
@@ -929,6 +925,15 @@ class PDFToolWidget(QWidget):
         """PDF转Word - 使用pdf2docx库"""
         import fitz  # PyMuPDF - 用于检测扫描PDF
         
+        # 延迟导入pdf2docx库
+        global PDF2DOCX_AVAILABLE
+        if PDF2DOCX_AVAILABLE is None:
+            try:
+                from pdf2docx import parse, Converter
+                PDF2DOCX_AVAILABLE = True
+            except ImportError:
+                PDF2DOCX_AVAILABLE = False
+        
         try:
             total_files = len(self.file_list)
             processed_files = 0
@@ -952,16 +957,6 @@ class PDFToolWidget(QWidget):
                         self.operation_finished.emit(False, error_msg)
                         return
                     
-                    # 确定开始和结束页码
-                    if pages_to_convert is None:
-                        # 全部页面
-                        start_page = 0
-                        end_page = None
-                    else:
-                        # 自定义范围 - 使用第一个和最后一个页码
-                        start_page = pages_to_convert[0]
-                        end_page = pages_to_convert[-1] + 1  # pdf2docx的end是exclusive
-                    
                     # 输出文件路径
                     file_name = os.path.splitext(os.path.basename(file_path))[0]
                     output_name = f"{file_name}.docx"
@@ -972,12 +967,21 @@ class PDFToolWidget(QWidget):
                     
                     # 检查pdf2docx库是否可用
                     if not PDF2DOCX_AVAILABLE:
-                        raise Exception("pdf2docx库未安装,请运行: pip install pdf2docx")
+                        raise Exception(t('pdf_need_docx_lib'))
                     
-                    # 使用parse()函数转换 - 不使用multi_processing避免日志重复
+                    # 根据页面范围类型选择转换方式
                     try:
-                        # parse函数支持start和end参数
-                        parse(file_path, output_path, start=start_page, end=end_page)
+                        if pages_to_convert is None:
+                            # 全部页面: 使用parse()函数
+                            parse(file_path, output_path)
+                        else:
+                            # 自定义范围: 使用Converter类和pages参数(支持离散页面)
+                            from pdf2docx import Converter
+                            cv = Converter(file_path)
+                            try:
+                                cv.convert(output_path, pages=pages_to_convert)
+                            finally:
+                                cv.close()
                         
                         # 验证文件是否正确生成
                         if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
@@ -1009,8 +1013,10 @@ class PDFToolWidget(QWidget):
                     self.progress_updated.emit(progress)
                     
                 except Exception as e:
-                    # 记录错误但继续处理其他文件
-                    print(f"文件处理失败: {file_path}, 错误: {e}")
+                    # 向用户显示错误信息
+                    error_msg = t('pdf_file_process_failed', os.path.basename(file_path), str(e))
+                    self.warning_requested.emit(error_msg)
+                    print(f"详细错误信息:\n{traceback.format_exc()}")
                     continue
             
             if processed_files == total_files:
@@ -1131,6 +1137,8 @@ class PDFToolWidget(QWidget):
         self.page_all_radio.setText(t('pdf_page_range_all'))
         self.page_custom_radio.setText(t('pdf_page_range_custom'))
         self.page_range_input.setPlaceholderText(t('pdf_page_range_placeholder'))
+        self.format_label.setText(t('pdf_format_quality'))
+        self.format_desc.setText(t('pdf_format_desc'))
         self.file_count_label.setText(t('pdf_file_count', len(self.file_list)))
         self.process_btn.setText(t('pdf_start'))
         
