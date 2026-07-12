@@ -1,88 +1,88 @@
 # DeskHelperGUI - Desktop Office Assistant
 
-## Project Overview
+## Project Introduction
 
-DeskHelperGUI is a desktop office assistant tool that provides various quick and practical features to make daily office work more efficient. Supports file compression, image processing, PDF operations, QR code generation, and many other practical functions with a simple and easy-to-use interface.
+DeskHelperGUI is a desktop office auxiliary tool that provides various quick and practical features to make daily office work more efficient. It supports file compression, image processing, PDF operations, QR code generation and many other practical functions with a simple and easy-to-use interface.
+
+## Project Screenshots
+
+![Project Screenshots](https://lisseldee.github.io/images/webp/3-1.webp)
 
 ## Project Information
 
 - **Project Name**: DeskHelperGUI
-- **Author**: Lisselde_E
-- **Email**: Lisselde.E@outlook.com
-- **Repository**: https://github.com/LisseldeE/DeskHelperGUI
+- **Project Author**: Lisselde_E
+- **Project Homepage**: https://lisseldee.github.io
+- **Project Repository**: https://github.com/LisseldeE/DeskHelperGUI
 
 ## Download
 
 - **GitHub Releases**: https://github.com/LisseldeE/DeskHelperGUI/releases
-- **Gitee Mirror**: https://gitee.com/Lisselde_E/DeskHelperGUI/releases (Recommended for users in China)
+- **Gitee Mirror Download**: https://gitee.com/Lisselde_E/DeskHelperGUI/releases (Recommended for users in China)
 
 ## Features
 
 ### Quick Compression
-- **File Compression**: Choose compression format, compression level, and encryption options; save compressed files with global path
-- **Quick Decompression**: Automatically identify compressed packages, support encrypted file decryption, save decompressed files with global path
+- **File Compression**: Select compression format, compression level, and whether to encrypt, save compressed files with global path
+- **Quick Decompression**: Automatically identify compressed files, support encrypted file decryption, save decompressed files with global path
 
 ### File Processing
-- **File Name Extraction**: Select folder to extract file names, option to include or exclude extensions, export to Excel file
-- **Batch Rename**: Support prefix/suffix, number sequence, text replacement, regex and other renaming rules
+- **File Name Extraction**: Select folder to extract file names, optional include extension, export as Excel file
+- **Batch Rename**: Support adding prefix/suffix, numeric numbering, text replacement, regular expression and other rename rules
 - **Batch Create**: Read list from Excel file, batch create folders or files
-- Use global save path, support drag-and-drop import
+- Use global save path, support drag and drop import
 
 ### Image Processing
 - Import image files
-- **Rotate Image**: Choose rotation angle
-- **Crop Image**: Provide preset size options (e.g., ID photo sizes)
-- **Compress Image**: Provide compression size adjustment slider with real-time preview of compressed size
-- **ID Photo Layout**: Support 1-inch, 2-inch and other ID photo size presets, choose paper size and layout direction, real-time preview of layout effect
+- **Rotate Image**: Selectable rotation angle
+- **Crop Image**: Provide preset size options (such as ID photo sizes)
+- **Compress Image**: Provide compression size adjustment slider, real-time preview of compressed size
+- **ID Photo Layout**: Support 1-inch, 2-inch and other ID photo size presets, select paper size and layout mode, real-time preview of layout effect
 
 ### Format Conversion
-- Import single file or batch process folders
+- Import single file or folder for batch processing
 - **Image Format Conversion**: Support JPG, PNG, ICO, BMP, GIF, WebP format conversion
-- **PDF to Image**: Convert PDF to JPG or PNG format
-- **ICO Format**: Support 16×16 to 256×256 multiple size options, auto-adjust ratio
-- Use global save path, support drag-and-drop import
+- **PDF to Image**: Support converting PDF to JPG or PNG format
+- **ICO Format**: Support 16×16 to 256×256 multiple size options, automatically adjust ratio
+- Use global save path, support drag and drop import
 
 ### PDF Processing
 - Import PDF files
 - **PDF Split**: Split PDF into single-page or multi-page files, support custom page range
 - **PDF Merge**: Merge multiple PDF files into one
-- **PDF Compress**: Compress PDF file size to reduce storage space
-- **PDF to Word**: Convert PDF to Word document, preserving tables, images, and styles, with page range selection
-  - Automatically preserves table structure and image positions
+- **PDF Compress**: Compress PDF file size, reduce storage space
+- **PDF to Word**: Convert PDF to Word document, preserve tables, images, styles, support page range selection
+  - Automatically preserve table structure and image position
   - Support all pages or custom range conversion
-  - Note: Space-based layouts may not convert well, scanned PDFs are not supported
+  - Note: Space-based layout conversion quality is poor, scanned PDF not supported
 
 ### File Hash Verification
-- Import files for hash calculation
+- Import files for hash value calculation
 - Support MD5, SHA-1, SHA-256, SHA-512 algorithms
-- Compare with existing hash values for verification
+- Can compare with existing hash values for verification
 - Export hash value results
 
 ### QR Code Tool
-- **Generate QR Code**: Support text, URL, WiFi, business card, contact information conversion
+- **Generate QR Code**: Support text, URL, WiFi, business card, contact information and other content conversion
 - **Decode QR Code**: Recognize QR code image content
-- **Custom Style**: Adjust QR code color and background color
+- **Custom Style**: Adjust QR code foreground and background colors
 - Support exporting QR code images
 
 ### File Encryption
-- **File Encryption**: Encrypt files with password, support AES-256 encryption algorithm
-- **File Decryption**: Decrypt encrypted files with password
-- **Large File Optimization**: Use chunked encryption for large files, real-time progress display
-- Support cancel operation, automatic cleanup of temporary files
+- **File Encryption**: Use password to encrypt files, support AES-256 encryption algorithm
+- **File Decryption**: Enter password to decrypt encrypted files
+- **Large File Optimization**: Use block encryption for large files, real-time display progress
+- Support cancel operation, automatically clean temporary files
 
-## Update Log
+## Changelog
 
-### 2026.7.9 R6
-
-**#01**
-- Updated configuration file save path
-- Fixed issue where hash verification old data remained when importing new files
+### 2026.6.24 R6
 
 **#02**
-- Added PDF tool - PDF to Word feature
+- Added PDF tool - Convert to Word function
 - Moved configuration file save path
 
-See [Update Log](https://github.com/LisseldeE/DeskHelperGUI/blob/main/update.log)
+See [CHANGELOG.md](https://github.com/LisseldeE/DeskHelperGUI/blob/main/CHANGELOG.md) for details
 
 ## Technology Stack
 
@@ -98,8 +98,8 @@ See [Update Log](https://github.com/LisseldeE/DeskHelperGUI/blob/main/update.log
 ## Installation and Running
 
 ### System Requirements
-- Python 3.6 or higher
-- Windows / macOS / Linux
+- Python 3.6 or higher version
+- Windows10/11
 
 ### Install Dependencies
 ```bash
@@ -113,17 +113,14 @@ python DeskHelperGUI.py
 
 ## Open Source License
 
-This project uses the MIT open source license, see [LICENSE](https://github.com/LisseldeE/DeskHelperGUI/blob/main/LICENSE) file for details.
+This project uses MIT open source license, see [LICENSE](https://github.com/LisseldeE/DeskHelperGUI/blob/main/LICENSE) file.
 
 ## Privacy Policy
 
-This project does not collect any user data. All configuration files are saved in the user's local directory. See relevant privacy statement for details.
+This project does not collect any user data, all configuration files are saved in user local directory. See relevant privacy statement.
 
 ## Contact and Feedback
 
-**This application is under development. If you have any questions or new ideas, please feel free to contact me!**
+**Application in development, if you have any questions or new ideas, feel free to contact me!**
 
-- 📧 Email: Lisselde.E@outlook.com
-- 🐙 GitHub: https://github.com/LisseldeE/DeskHelperGUI
-
-Issues and Pull Requests are welcome!
+Welcome to submit Issues and Pull Requests!

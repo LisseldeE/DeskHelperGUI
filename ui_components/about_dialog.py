@@ -21,12 +21,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from i18n import set_language, t
 from ui_components.animated_button import AnimatedButton
+from ui_components.clickable_label import ClickableLabel
 
 # 项目信息
 APP_NAME = "DeskHelperGUI"
 APP_VERSION = "R6"
 APP_AUTHOR = "Lisselde_E"
-APP_EMAIL = "Lisselde.E@outlook.com"
+APP_AUTHOR_LINK = "https://lisseldee.github.io"  # 作者主页链接
 
 # 仓库信息（GitHub 和 Gitee 用户名不同）
 GITHUB_REPO = "LisseldeE/DeskHelperGUI"
@@ -82,22 +83,29 @@ class AboutDialog(QDialog):
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
 
-        # 作者信息
+        # 作者信息（灰色悬浮变蓝，不可点击）
         author_label = QLabel(t('about_author'))
-        author_label.setStyleSheet("font-size: 12px; color: #495057;")
+        author_label.setStyleSheet("""
+            QLabel {
+                font-size: 11px;
+                color: #495057;
+            }
+            QLabel:hover {
+                color: #339af0;
+            }
+        """)
         author_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(author_label)
 
-        # GitHub链接（可点击，始终显示 GitHub）
+        # GitHub链接（灰色悬浮变蓝，可点击）
         github_label = QLabel(f"GitHub: {GITHUB_REPO}")
         github_label.setStyleSheet("""
             QLabel {
-                font-size: 12px;
-                color: #339af0;
+                font-size: 11px;
+                color: #495057;
             }
             QLabel:hover {
-                color: #228be6;
-                text-decoration: underline;
+                color: #339af0;
             }
         """)
         github_label.setAlignment(Qt.AlignCenter)
@@ -105,21 +113,34 @@ class AboutDialog(QDialog):
         github_label.mousePressEvent = lambda event: self._open_github()
         layout.addWidget(github_label)
 
-        # 邮箱（可点击复制）
-        email_label = QLabel(f"Email: {APP_EMAIL}")
-        email_label.setStyleSheet("""
-            QLabel {
-                font-size: 12px;
-                color: #495057;
-            }
-            QLabel:hover {
-                color: #339af0;
-            }
-        """)
-        email_label.setAlignment(Qt.AlignCenter)
-        email_label.setCursor(Qt.PointingHandCursor)
-        email_label.mousePressEvent = lambda event: self._copy_email()
-        layout.addWidget(email_label)
+        # 问题反馈和查看详情链接（使用 ClickableLabel）
+        link_layout = QHBoxLayout()
+        link_layout.addStretch()
+
+        # 问题反馈链接
+        feedback_label = ClickableLabel(
+            t('about_feedback'),
+            normal_color="#339af0",
+            hover_color="#228be6",
+            underline_on_hover=True
+        )
+        feedback_label.set_click_callback(self._open_issues)
+        link_layout.addWidget(feedback_label)
+
+        link_layout.addSpacing(20)
+
+        # 查看详情链接
+        details_label = ClickableLabel(
+            t('about_details'),
+            normal_color="#339af0",
+            hover_color="#228be6",
+            underline_on_hover=True
+        )
+        details_label.set_click_callback(self._open_details)
+        link_layout.addWidget(details_label)
+
+        link_layout.addStretch()
+        layout.addLayout(link_layout)
 
         # 按钮区域
         btn_layout = QHBoxLayout()
@@ -127,8 +148,7 @@ class AboutDialog(QDialog):
 
         # 检查更新按钮
         check_update_btn = AnimatedButton(t('about_check_update'))
-        check_update_btn.setMinimumWidth(120)
-        check_update_btn.setFixedHeight(36)
+        check_update_btn.setFixedSize(100, 36)
         check_update_btn.setStyleSheet("""
             QPushButton {
                 background-color: #339af0;
@@ -163,11 +183,13 @@ class AboutDialog(QDialog):
         """打开 GitHub 链接"""
         QDesktopServices.openUrl(QUrl(f"https://github.com/{GITHUB_REPO}"))
 
-    def _copy_email(self):
-        """复制邮箱到剪贴板"""
-        clipboard = QApplication.clipboard()
-        clipboard.setText(APP_EMAIL)
-        QMessageBox.information(self, t('about_info'), t('about_email_copied'))
+    def _open_issues(self, event):
+        """打开 GitHub Issues 页面（问题反馈）"""
+        QDesktopServices.openUrl(QUrl(f"https://github.com/{GITHUB_REPO}/issues"))
+
+    def _open_details(self, event):
+        """打开作者主页链接（查看详情）"""
+        QDesktopServices.openUrl(QUrl(APP_AUTHOR_LINK))
 
     def _check_update(self):
         """检查更新（根据语言选择 API 源）"""

@@ -4,11 +4,15 @@
 
 DeskHelperGUI 是一款桌面办公辅助工具，提供多种快捷实用功能，让日常办公更高效。支持文件压缩、图片处理、PDF操作、二维码生成等多种实用功能，界面简洁易用。
 
+## 项目截图
+
+![项目截图](https://lisseldee.github.io/images/webp/3-1.webp)
+
 ## 项目信息
 
 - **项目名称**: DeskHelperGUI
 - **项目作者**: Lisselde_E
-- **联系邮箱**: Lisselde.E@outlook.com
+- **项目主页**: https://lisseldee.github.io
 - **项目仓库**: https://github.com/LisseldeE/DeskHelperGUI
 
 ## 下载
@@ -72,17 +76,13 @@ DeskHelperGUI 是一款桌面办公辅助工具，提供多种快捷实用功能
 
 ## 更新日志
 
-### 2026.7.9 R6
-
-**#01**
-- 更新了配置文件保存路径
-- 修复了哈希校验移入新文件老数据残留的问题
+### 2026.6.24 R6
 
 **#02**
 - 新增PDF工具-转为word功能
 - 移动了配置文件保存路径
 
-详见 [更新日志](https://github.com/LisseldeE/DeskHelperGUI/blob/main/update.log)
+详见 [更新日志](https://github.com/LisseldeE/DeskHelperGUI/blob/main/CHANGELOG.md)
 
 ## 技术栈
 
@@ -99,7 +99,7 @@ DeskHelperGUI 是一款桌面办公辅助工具，提供多种快捷实用功能
 
 ### 系统要求
 - Python 3.6 或更高版本
-- Windows / macOS / Linux
+- Windows10/11
 
 ### 安装依赖
 ```bash
@@ -122,8 +122,5 @@ python DeskHelperGUI.py
 ## 联系与反馈
 
 **开发中应用，如有问题或新的创意欢迎和我联系！**
-
-- 📧 邮箱: Lisselde.E@outlook.com
-- 🐙 GitHub: https://github.com/LisseldeE/DeskHelperGUI
 
 欢迎提交 Issue 和 Pull Request！

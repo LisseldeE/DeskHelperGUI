@@ -5,7 +5,6 @@ DeskHelperGUI - 桌面助手GUI
 项目信息：
 - 项目名称：DeskHelperGUI
 - 项目作者：Lisselde_E
-- 项目邮箱：Lisselde.E@outlook.com
 - 项目仓库：https://github.com/LisseldeE/DeskHelperGUI
 """
 
@@ -35,7 +34,6 @@ from i18n import set_language, t, get_i18n
 APP_NAME = "DeskHelperGUI"
 APP_VERSION = "R6"
 APP_AUTHOR = "Lisselde_E"
-APP_EMAIL = "Lisselde.E@outlook.com"
 APP_REPO = "LisseldeE/DeskHelperGUI"
 
 
