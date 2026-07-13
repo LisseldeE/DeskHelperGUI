@@ -27,7 +27,7 @@ from ui_components.clickable_label import ClickableLabel
 APP_NAME = "DeskHelperGUI"
 APP_VERSION = "R6"
 APP_AUTHOR = "Lisselde_E"
-APP_AUTHOR_LINK = "https://lisseldee.github.io"  # 作者主页链接
+APP_AUTHOR_LINK = "https://lisseldee.github.io/#4"  # 作者主页链接
 
 # 仓库信息（GitHub 和 Gitee 用户名不同）
 GITHUB_REPO = "LisseldeE/DeskHelperGUI"
