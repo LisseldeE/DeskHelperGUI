@@ -12,7 +12,7 @@ DeskHelperGUI is a desktop office auxiliary tool that provides various quick and
 
 - **Project Name**: DeskHelperGUI
 - **Project Author**: Lisselde_E
-- **Project Homepage**: https://lisseldee.github.io
+- **Project Homepage**: https://lisseldee.github.io/#4
 - **Project Repository**: https://github.com/LisseldeE/DeskHelperGUI
 
 ## Download
